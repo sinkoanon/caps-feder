@@ -1078,36 +1078,39 @@ function parseCSVLine(line, sep) {
 function importCSV(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const text = e.target.result;
-    const lines = text.split('\n').filter(l => l.trim());
 
-    // ── Détecter le séparateur : ; en priorité, sinon ,
+  // Essayer d'abord UTF-8, puis latin-1 si échec
+  const tryParse = (text) => {
+    const lines = text.split('\n').filter(l => l.trim());
     const sep = lines[0].includes(';') ? ';' : ',';
 
-    // ── Trouver la ligne d'en-tête (contient "date" ET "lib")
+    // Trouver la ligne d'en-tête (contient "date" ET "lib")
     let headerLine = -1;
     for (let i = 0; i < Math.min(10, lines.length); i++) {
       const l = lines[i].toLowerCase();
-      if (l.includes('date') && l.includes('lib')) { headerLine = i; break; }
+      if (l.includes('date') && (l.includes('lib') || l.includes('libell'))) {
+        headerLine = i; break;
+      }
     }
-    const startLine = headerLine >= 0 ? headerLine + 1 : 0;
+    if (headerLine < 0) return null;
 
-    // ── Identifier les indices de colonnes depuis l'en-tête
-    let colDate = 0, colLib = 1, colDebit = 2, colCredit = -1;
-    if (headerLine >= 0) {
-      const headers = parseCSVLine(lines[headerLine], sep).map(h => h.toLowerCase().replace(/[éè]/g,'e').replace(/[àâ]/g,'a'));
-      headers.forEach((h, i) => {
-        if (h.includes('date'))   colDate   = i;
-        if (h.includes('lib'))    colLib    = i;
-        if (h.includes('deb'))    colDebit  = i;
-        if (h.includes('cred'))   colCredit = i;
-      });
-    }
+    // Identifier les indices de colonnes depuis l'en-tête
+    const headers = parseCSVLine(lines[headerLine], sep).map(h =>
+      h.toLowerCase()
+       .replace(/[éèê]/g,'e').replace(/[àâ]/g,'a')
+       .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+       .trim()
+    );
+    let colDate=0, colLib=1, colDebit=2, colCredit=-1;
+    headers.forEach((h, i) => {
+      if (h === 'date' || h.startsWith('date'))            colDate   = i;
+      if (h.includes('lib'))                               colLib    = i;
+      if (h.includes('deb'))                               colDebit  = i;
+      if (h.includes('cred') || h.includes('cred'))        colCredit = i;
+    });
 
     const parsed = [];
-    for (let i = startLine; i < lines.length; i++) {
+    for (let i = headerLine + 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i], sep);
       const dateRaw = (cols[colDate] || '').trim();
       if (!dateRaw.match(/\d{2}\/\d{2}\/\d{4}/)) continue;
@@ -1115,22 +1118,21 @@ function importCSV(input) {
       const libelle = (cols[colLib] || '').trim();
       if (!libelle) continue;
 
-      // Montant : débit (négatif) ou crédit (positif)
-      // Nettoyer : enlever guillemets, espaces, remplacer virgule décimale
+      // Nettoyer un montant : enlever guillemets, espaces, remplacer virgule décimale
       const nettoyer = s => parseFloat(
-        (s||'').replace(/"/g,'').replace(/\s/g,'').replace(',','.')
+        (s||'').replace(/"/g,'').replace(/\s/g,'').replace(',','.').trim()
       ) || 0;
 
-      let montant = 0;
-      const debitRaw  = nettoyer(cols[colDebit]  || '');
+      const debitRaw  = nettoyer(cols[colDebit] || '');
       const creditRaw = colCredit >= 0 ? nettoyer(cols[colCredit] || '') : 0;
 
-      if (debitRaw < 0)       montant = debitRaw;          // déjà négatif
-      else if (debitRaw > 0)  montant = -debitRaw;         // positif → on le passe négatif
-      else if (creditRaw > 0) montant = creditRaw;         // crédit → positif
+      let montant = 0;
+      if (debitRaw < 0)       montant = debitRaw;   // déjà négatif
+      else if (debitRaw > 0)  montant = -debitRaw;  // positif → négatif
+      else if (creditRaw > 0) montant = creditRaw;  // crédit → positif
 
       parsed.push({
-        id: Date.now() + '_' + i,
+        id: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,6),
         date: dateISO,
         libelle,
         montant,
@@ -1139,13 +1141,20 @@ function importCSV(input) {
         source: 'banque'
       });
     }
+    return parsed.length ? { parsed, sep, headerLine } : null;
+  };
 
-    if (!parsed.length) {
-      document.getElementById('import-preview').innerHTML = `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i>Aucune opération détectée. Vérifiez le format du fichier (colonnes Date, Libellé, Débit attendues).</div>`;
+  const reader = new FileReader();
+
+  const handleText = (text) => {
+    const result = tryParse(text);
+    if (!result) {
+      document.getElementById('import-preview').innerHTML =
+        `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i>Aucune opération détectée. Vérifiez le format du fichier.</div>`;
       document.getElementById('import-actions').style.display = 'none';
       return;
     }
-
+    const { parsed, sep, headerLine } = result;
     state.importBuffer = parsed;
     const credits = parsed.filter(o => o.montant > 0).length;
     const debits  = parsed.filter(o => o.montant < 0).length;
@@ -1160,12 +1169,23 @@ function importCSV(input) {
         <tbody>${parsed.slice(0,10).map(o=>`<tr>
           <td style="white-space:nowrap">${o.date}</td>
           <td>${o.libelle}</td>
-          <td style="text-align:right;${o.montant<0?'color:var(--red)':'color:var(--teal)'}">${fmt(o.montant)}</td>
+          <td style="text-align:right;${o.montant<0?'color:var(--red)':'color:var(--teal)'}">${fmt(montantNet(o))}</td>
         </tr>`).join('')}
         ${parsed.length > 10 ? `<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:.5rem">… ${parsed.length - 10} autres opérations</td></tr>` : ''}
         </tbody></table></div></div>`;
     document.getElementById('import-count').textContent = parsed.length + ' opérations à importer';
     document.getElementById('import-actions').style.display = 'flex';
+  };
+
+  // Essayer UTF-8 d'abord, puis latin-1
+  reader.onload = e => {
+    const textUtf8 = e.target.result;
+    const result = tryParse(textUtf8);
+    if (result) { handleText(textUtf8); return; }
+    // Relire en latin-1
+    const r2 = new FileReader();
+    r2.onload = e2 => handleText(e2.target.result);
+    r2.readAsText(file, 'latin-1');
   };
   reader.readAsText(file, 'utf-8');
   input.value = '';
