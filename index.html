@@ -1079,78 +1079,83 @@ function importCSV(input) {
   const file = input.files[0];
   if (!file) return;
 
-  // Essayer d'abord UTF-8, puis latin-1 si échec
-  const tryParse = (text) => {
+  const doParse = (text) => {
     const lines = text.split('\n').filter(l => l.trim());
     const sep = lines[0].includes(';') ? ';' : ',';
 
-    // Trouver la ligne d'en-tête (contient "date" ET "lib")
+    // Trouver la ligne d'en-tête — chercher "date" dans n'importe quel encodage
     let headerLine = -1;
     for (let i = 0; i < Math.min(10, lines.length); i++) {
-      const l = lines[i].toLowerCase();
-      if (l.includes('date') && (l.includes('lib') || l.includes('libell'))) {
+      // Normaliser : enlever accents, mettre en minuscules
+      const norm = lines[i].toLowerCase()
+        .replace(/[\u00e9\u00e8\u00ea\u00eb]/g,'e')
+        .replace(/[\u00e0\u00e2\u00e4]/g,'a')
+        .replace(/[\u00ee\u00ef]/g,'i')
+        .replace(/[\u00f4\u00f6]/g,'o')
+        .replace(/[\u00fb\u00fc]/g,'u')
+        // latin-1 mal décodé
+        .replace(/\ufffde9/g,'e').replace(/\xe9/g,'e')
+        .replace(/\xe8/g,'e').replace(/\xe0/g,'a')
+        .replace(/\xea/g,'e').replace(/\xeb/g,'e');
+      if (norm.includes('date') && (norm.includes('lib') || norm.includes('bell'))) {
         headerLine = i; break;
       }
     }
     if (headerLine < 0) return null;
 
-    // Identifier les indices de colonnes depuis l'en-tête
-    const headers = parseCSVLine(lines[headerLine], sep).map(h =>
-      h.toLowerCase()
-       .replace(/[éèê]/g,'e').replace(/[àâ]/g,'a')
-       .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
-       .trim()
+    // Lire les colonnes de l'en-tête
+    const rawHeaders = parseCSVLine(lines[headerLine], sep);
+    const headers = rawHeaders.map(h => h.toLowerCase()
+      .replace(/[^\x00-\x7F]/g, '_') // remplacer tout caractère non-ASCII par _
+      .trim()
     );
-    let colDate=0, colLib=1, colDebit=2, colCredit=-1;
+
+    // Trouver les indices par position connue si la détection échoue
+    // Format Crédit Mutuel : Date(0), Valeur(1), Libellé(2), Débit(3), Crédit(4), Solde(5)
+    let colDate = 0, colLib = 2, colDebit = 3, colCredit = 4;
     headers.forEach((h, i) => {
-      if (h === 'date' || h.startsWith('date'))            colDate   = i;
-      if (h.includes('lib'))                               colLib    = i;
-      if (h.includes('deb'))                               colDebit  = i;
-      if (h.includes('cred') || h.includes('cred'))        colCredit = i;
+      if (h === 'date')                          colDate   = i;
+      if (h.includes('lib') || h.includes('_b')) colLib    = i;
+      if (h.includes('d_b') || h.includes('deb') || h === 'd_bit') colDebit = i;
+      if (h.includes('cr_d') || h.includes('cred') || h === 'cr_dit') colCredit = i;
     });
 
     const parsed = [];
     for (let i = headerLine + 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i], sep);
-      const dateRaw = (cols[colDate] || '').trim();
-      if (!dateRaw.match(/\d{2}\/\d{2}\/\d{4}/)) continue;
+      if (!cols[colDate]) continue;
+      const dateRaw = cols[colDate].trim();
+      if (!dateRaw.match(/^\d{2}\/\d{2}\/\d{4}$/)) continue;
       const dateISO = dateRaw.split('/').reverse().join('-');
       const libelle = (cols[colLib] || '').trim();
       if (!libelle) continue;
 
-      // Nettoyer un montant : enlever guillemets, espaces, remplacer virgule décimale
       const nettoyer = s => parseFloat(
         (s||'').replace(/"/g,'').replace(/\s/g,'').replace(',','.').trim()
       ) || 0;
 
-      const debitRaw  = nettoyer(cols[colDebit] || '');
-      const creditRaw = colCredit >= 0 ? nettoyer(cols[colCredit] || '') : 0;
+      const debitRaw  = nettoyer(cols[colDebit]  || '');
+      const creditRaw = nettoyer(cols[colCredit] || '');
 
       let montant = 0;
-      if (debitRaw < 0)       montant = debitRaw;   // déjà négatif
-      else if (debitRaw > 0)  montant = -debitRaw;  // positif → négatif
-      else if (creditRaw > 0) montant = creditRaw;  // crédit → positif
+      if      (debitRaw < 0)  montant = debitRaw;
+      else if (debitRaw > 0)  montant = -debitRaw;
+      else if (creditRaw > 0) montant = creditRaw;
 
       parsed.push({
-        id: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,6),
-        date: dateISO,
-        libelle,
-        montant,
+        id: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,5),
+        date: dateISO, libelle, montant,
         pole: null, sousPrj: null, cat: null,
-        statut: 'en_attente', ventilation: null,
-        source: 'banque'
+        statut: 'en_attente', ventilation: null, source: 'banque'
       });
     }
     return parsed.length ? { parsed, sep, headerLine } : null;
   };
 
-  const reader = new FileReader();
-
-  const handleText = (text) => {
-    const result = tryParse(text);
+  const showResult = (result, filename) => {
     if (!result) {
       document.getElementById('import-preview').innerHTML =
-        `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i>Aucune opération détectée. Vérifiez le format du fichier.</div>`;
+        `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i>Aucune opération détectée. Vérifiez le format (colonnes Date, Libellé, Débit attendues).</div>`;
       document.getElementById('import-actions').style.display = 'none';
       return;
     }
@@ -1160,34 +1165,31 @@ function importCSV(input) {
     const debits  = parsed.filter(o => o.montant < 0).length;
     document.getElementById('import-preview').innerHTML = `
       <div class="ib ib-green"><i class="ti ti-check"></i>
-        <span><strong>${file.name}</strong> — <strong>${parsed.length}</strong> opération(s) détectées
-        · ${debits} débit(s) · ${credits} crédit(s)
-        · séparateur « ${sep} » · en-tête ligne ${headerLine+1}</span>
+        <span><strong>${filename}</strong> — <strong>${parsed.length}</strong> opération(s) · ${debits} débit(s) · ${credits} crédit(s) · séparateur «${sep}» · en-tête L${headerLine+1}</span>
       </div>
       <div class="card" style="padding:0"><div class="tw"><table>
         <thead><tr><th>Date</th><th>Libellé</th><th style="text-align:right">Montant</th></tr></thead>
         <tbody>${parsed.slice(0,10).map(o=>`<tr>
           <td style="white-space:nowrap">${o.date}</td>
           <td>${o.libelle}</td>
-          <td style="text-align:right;${o.montant<0?'color:var(--red)':'color:var(--teal)'}">${fmt(montantNet(o))}</td>
+          <td style="text-align:right;color:${o.montant<0?'var(--red)':'var(--teal)'}">${fmt(montantNet(o))}</td>
         </tr>`).join('')}
-        ${parsed.length > 10 ? `<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:.5rem">… ${parsed.length - 10} autres opérations</td></tr>` : ''}
+        ${parsed.length>10?`<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:.5rem">… ${parsed.length-10} autres</td></tr>`:''}
         </tbody></table></div></div>`;
     document.getElementById('import-count').textContent = parsed.length + ' opérations à importer';
     document.getElementById('import-actions').style.display = 'flex';
   };
 
-  // Essayer UTF-8 d'abord, puis latin-1
-  reader.onload = e => {
-    const textUtf8 = e.target.result;
-    const result = tryParse(textUtf8);
-    if (result) { handleText(textUtf8); return; }
-    // Relire en latin-1
+  // Lire en latin-1 d'abord (Crédit Mutuel), puis UTF-8
+  const r1 = new FileReader();
+  r1.onload = e => {
+    const res = doParse(e.target.result);
+    if (res) { showResult(res, file.name); return; }
     const r2 = new FileReader();
-    r2.onload = e2 => handleText(e2.target.result);
-    r2.readAsText(file, 'latin-1');
+    r2.onload = e2 => showResult(doParse(e2.target.result), file.name);
+    r2.readAsText(file, 'utf-8');
   };
-  reader.readAsText(file, 'utf-8');
+  r1.readAsText(file, 'latin-1');
   input.value = '';
 }
 
@@ -2262,17 +2264,4 @@ function exportFacturesCSV() {
   const rows=[...state.factures].sort((a,b)=>(b.dateRecep||'').localeCompare(a.dateRecep||'')).map(f=>{
     const pole=state.poles.find(p=>p.id===f.pole);
     const cat=state.categories.find(c=>c.id===f.cat);
-    return [f.ref||'','"'+(f.fourn||'')+'"',(f.montant||0).toFixed(2).replace('.',','),f.dateRecep||'',f.dateEcheance||'',pole?.nom||'',cat?.nom||'',FAC_STATUTS[f.statut]?.lbl||f.statut,f.resp||'',f.datePaie||'','"'+(f.libelleVirement||'')+'"',f.payePar||'',f.refCompta||'','"'+(f.notes||'')+'"'].join(sep);
-  }).join('\n');
-  dl(BOM+h+'\n'+rows,'Collin_factures_'+today()+'.csv','text/csv;charset=utf-8');
-  toast('Export factures téléchargé');
-}
-
-// ── HELPER DATE ──
-function joursEcart(dateStr, now) {
-  const d = new Date(dateStr);
-  return Math.floor((now-d)/(1000*60*60*24));
-}
-</script>
-</body>
-</html>
+    return [f.ref||'','"'+(f.fourn||'')+'"',(f.montant||0).toFixed(2).replace('.',','),f.dateRecep||'',f.dateEcheance||'',pole?.nom||'',cat?.nom||'',FAC_STATUTS[f.statut]?.lbl||f.statut,f.resp||'',f.datePaie||'','"'+(f.libelleVirement||'')+'"',f.payePar||'',f.refCompta||'','"'+(
