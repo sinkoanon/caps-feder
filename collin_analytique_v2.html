@@ -1,0 +1,2258 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comptabilité analytique — Coll.in</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root {
+  --bg:#fff;--bg2:#f5f4f0;--bg3:#edecea;--bg4:#e6e4e0;
+  --border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.2);
+  --text:#1a1a18;--text2:#5c5c58;--text3:#9a9a94;
+  --purple:#534AB7;--purple-l:#EEEDFE;--purple-d:#3C3489;
+  --teal:#0F6E56;--teal-l:#E1F5EE;
+  --amber:#BA7517;--amber-l:#FAEEDA;
+  --red:#A32D2D;--red-l:#FCEBEB;
+  --blue:#185FA5;--blue-l:#E6F1FB;
+  --green:#3B6D11;--green-l:#EAF3DE;
+  --coral:#993C1D;--coral-l:#FAECE7;
+  --r:8px;--rl:12px;--rxl:16px;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1c1c1a;--bg2:#252522;--bg3:#2e2e2b;--bg4:#38382f;
+  --border:rgba(255,255,255,.09);--border2:rgba(255,255,255,.17);
+  --text:#f0efe8;--text2:#a8a89f;--text3:#6b6b64;
+  --purple-l:#26215C;--teal-l:#04342C;--amber-l:#412402;
+  --red-l:#501313;--blue-l:#042C53;--green-l:#173404;--coral-l:#4A1B0C;}
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg3);color:var(--text);min-height:100vh;font-size:15px}
+
+/* TOPBAR */
+.topbar{background:var(--bg);border-bottom:.5px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{width:30px;height:30px;border-radius:7px;background:var(--purple);display:flex;align-items:center;justify-content:center}
+.brand-logo i{color:#fff;font-size:15px}
+.brand h1{font-size:14px;font-weight:600;color:var(--text)}
+.brand span{font-size:11px;color:var(--text2);margin-left:3px}
+.topbar-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* LAYOUT */
+.layout{display:flex;min-height:calc(100vh - 52px)}
+.sidebar{width:210px;flex-shrink:0;background:var(--bg);border-right:.5px solid var(--border);padding:1rem 0;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;display:flex;flex-direction:column}
+.main{flex:1;padding:1.5rem;overflow-y:auto;min-width:0}
+
+/* NAV */
+.nav-section{padding:0 .75rem;margin-bottom:1.25rem}
+.nav-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:0 .5rem;margin-bottom:.4rem}
+.nav-item{display:flex;align-items:center;gap:7px;padding:6px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--text2);border:none;background:none;width:100%;text-align:left;transition:background .1s}
+.nav-item:hover{background:var(--bg2);color:var(--text)}
+.nav-item.active{background:var(--purple-l);color:var(--purple);font-weight:600}
+.nav-item.active i{color:var(--purple)}
+.nav-item i{font-size:15px;color:var(--text3);flex-shrink:0}
+.nav-sub{padding-left:1.5rem}
+.nav-sub .nav-item{font-size:12px;padding:5px 8px}
+.nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:.75rem}
+.sidebar-card{background:var(--purple-l);border-radius:var(--r);padding:.75rem;font-size:12px}
+.sidebar-card p{color:var(--purple-d);line-height:1.4}
+
+/* PAGES */
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:1.25rem}
+.page-header h2{font-size:18px;font-weight:600}
+.page-header p{font-size:13px;color:var(--text2);margin-top:2px}
+
+/* CARDS */
+.card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--rl);padding:1.25rem}
+.card-sm{padding:.875rem 1rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:1.25rem}
+.metric{background:var(--bg2);border-radius:var(--r);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.metric-value{font-size:21px;font-weight:600;color:var(--text);line-height:1.1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.ok{color:var(--teal)}.warn{color:var(--amber)}.danger{color:var(--red)}
+
+/* SECTION */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem;margin-top:1.25rem}
+.sec-header:first-child{margin-top:0}
+.sec-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
+.sec-title i{font-size:15px;color:var(--text2)}
+.divider{height:.5px;background:var(--border);margin:1rem 0}
+
+/* PROGRESS */
+.prog-block{margin-bottom:12px}
+.prog-meta{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+.prog-meta .l{font-weight:500;color:var(--text)}
+.prog-meta .r{color:var(--text2)}
+.bar-track{height:7px;background:var(--bg2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s}
+
+/* BADGES */
+.badge{font-size:11px;font-weight:500;padding:2px 7px;border-radius:6px;display:inline-block;white-space:nowrap}
+.b-purple{background:var(--purple-l);color:var(--purple-d)}
+.b-teal{background:var(--teal-l);color:var(--teal)}
+.b-amber{background:var(--amber-l);color:var(--amber)}
+.b-red{background:var(--red-l);color:var(--red)}
+.b-blue{background:var(--blue-l);color:var(--blue)}
+.b-green{background:var(--green-l);color:var(--green)}
+.b-coral{background:var(--coral-l);color:var(--coral)}
+.b-gray{background:var(--bg2);color:var(--text2);border:.5px solid var(--border)}
+
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 10px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;border-bottom:.5px solid var(--border2);white-space:nowrap}
+td{padding:8px 10px;color:var(--text);border-bottom:.5px solid var(--border);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg2)}
+.tf td{font-weight:600;background:var(--bg2);border-top:.5px solid var(--border2);border-bottom:none}
+.code{font-family:monospace;font-size:11px;background:var(--bg2);padding:1px 6px;border-radius:4px;border:.5px solid var(--border);color:var(--text)}
+
+/* FORMS */
+.fg{display:grid;gap:10px}
+.fg-2{grid-template-columns:1fr 1fr}
+.fg-3{grid-template-columns:1fr 1fr 1fr}
+.fg-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.fgroup label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px}
+.fgroup input,.fgroup select,.fgroup textarea{width:100%;padding:6px 9px;font-size:13px;background:var(--bg);border:.5px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;font-family:inherit;transition:border-color .1s}
+.fgroup input:focus,.fgroup select:focus,.fgroup textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(83,74,183,.1)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;font-size:13px;font-weight:500;border-radius:var(--r);cursor:pointer;border:none;font-family:inherit;transition:all .1s;white-space:nowrap}
+.btn-primary{background:var(--purple);color:#fff}.btn-primary:hover{background:var(--purple-d)}
+.btn-secondary{background:var(--bg2);color:var(--text);border:.5px solid var(--border2)}.btn-secondary:hover{background:var(--bg3)}
+.btn-danger{background:var(--red-l);color:var(--red)}.btn-danger:hover{filter:brightness(.95)}
+.btn-success{background:var(--teal-l);color:var(--teal)}.btn-success:hover{filter:brightness(.95)}
+.btn-sm{padding:5px 9px;font-size:12px}
+.btn-xs{padding:3px 7px;font-size:11px}
+
+/* INFO BOXES */
+.ib{border-radius:var(--r);padding:10px 13px;font-size:13px;display:flex;align-items:flex-start;gap:8px;margin-bottom:.875rem;line-height:1.5}
+.ib i{font-size:15px;flex-shrink:0;margin-top:1px}
+.ib-blue{background:var(--blue-l);color:var(--blue);border:.5px solid rgba(24,95,165,.18)}
+.ib-amber{background:var(--amber-l);color:var(--amber);border:.5px solid rgba(186,117,23,.18)}
+.ib-green{background:var(--green-l);color:var(--green);border:.5px solid rgba(59,109,17,.18)}
+.ib-red{background:var(--red-l);color:var(--red);border:.5px solid rgba(163,45,45,.18)}
+
+/* CONFIG BANNER */
+.cfg-banner{background:var(--purple-l);border:.5px solid rgba(83,74,183,.2);border-radius:var(--rl);padding:.875rem 1.125rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.cfg-field{display:flex;align-items:center;gap:7px}
+.cfg-field label{font-size:11px;font-weight:700;color:var(--purple-d);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.cfg-field input{padding:4px 8px;font-size:13px;font-weight:500;background:#fff;border:.5px solid rgba(83,74,183,.25);border-radius:var(--r);color:var(--purple-d);outline:none;font-family:monospace}
+.cfg-field input:focus{border-color:var(--purple);box-shadow:0 0 0 2px rgba(83,74,183,.12)}
+
+/* POLE CARDS */
+.pole-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:1.25rem}
+.pole-card{background:var(--bg);border:.5px solid var(--border);border-radius:var(--rl);padding:1rem;cursor:pointer;transition:border-color .15s}
+.pole-card:hover{border-color:var(--border2)}
+.pole-card.selected{border-color:var(--purple);box-shadow:0 0 0 2px rgba(83,74,183,.1)}
+.pole-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pole-name{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px}
+.pole-budget{font-size:12px;color:var(--text2)}
+.pole-bar{height:6px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.pole-fill{height:100%;border-radius:3px}
+.pole-stats{display:flex;justify-content:space-between;font-size:12px;color:var(--text2)}
+
+/* IMPORT ZONE */
+.drop-zone{border:1.5px dashed var(--border2);border-radius:var(--rl);padding:1.75rem;text-align:center;cursor:pointer;transition:all .15s}
+.drop-zone:hover{background:var(--bg2);border-color:var(--purple)}
+.drop-zone i{font-size:28px;color:var(--text3);margin-bottom:8px;display:block}
+.drop-zone strong{display:block;font-size:14px;color:var(--text);margin-bottom:4px}
+.drop-zone p{font-size:12px;color:var(--text3)}
+
+/* ETIQUETAGE */
+.etiq-row{display:grid;grid-template-columns:110px 1fr 120px 120px 130px 120px 36px;gap:6px;align-items:center;padding:6px 8px;border-bottom:.5px solid var(--border);font-size:12px}
+.etiq-row:hover{background:var(--bg2)}
+.etiq-head{background:var(--bg2);font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;border-bottom:.5px solid var(--border2)}
+.etiq-row select{padding:3px 6px;font-size:12px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text);outline:none;width:100%}
+.etiq-row select:focus{border-color:var(--purple)}
+.tag-applied{background:var(--teal-l);color:var(--teal);border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500}
+.tag-pending{background:var(--amber-l);color:var(--amber);border-radius:4px;padding:2px 6px;font-size:11px}
+
+/* VENTILATION MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg);border-radius:var(--rxl);padding:1.5rem;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:1rem}
+.vent-row{display:grid;grid-template-columns:1fr 1fr 80px;gap:8px;align-items:end;margin-bottom:8px}
+.vent-total{font-size:13px;font-weight:600;text-align:right;padding-top:8px;border-top:.5px solid var(--border2)}
+
+/* CHARTS */
+.chart-wrap{position:relative;width:100%}
+.chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
+.leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* TWO COL */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:var(--bg);padding:9px 16px;border-radius:var(--r);font-size:13px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:300;display:flex;align-items:center;gap:7px}
+
+/* RESPONSIVE */
+@media(max-width:900px){.sidebar{display:none}.main{padding:1rem}.two-col,.three-col{grid-template-columns:1fr}.fg-4{grid-template-columns:1fr 1fr}.etiq-row{grid-template-columns:90px 1fr 100px 100px 36px}}
+@media(max-width:600px){.fg-3,.fg-2{grid-template-columns:1fr}.card-grid{grid-template-columns:1fr 1fr}.pole-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-logo"><i class="ti ti-chart-treemap"></i></div>
+    <h1>Analytique Coll.in<span id="tb-exercice">· 2026</span></h1>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-secondary btn-sm" onclick="showPage('config')"><i class="ti ti-settings"></i> Config</button>
+    <button class="btn btn-secondary btn-sm" onclick="sauvegarder()"><i class="ti ti-device-floppy"></i> Sauvegarder</button>
+    <button class="btn btn-secondary btn-sm" onclick="exportJSON()"><i class="ti ti-download"></i> Export JSON</button>
+    <label class="btn btn-secondary btn-sm" style="cursor:pointer"><i class="ti ti-upload"></i> Import JSON<input type="file" accept=".json" onchange="importJSON(this)" style="display:none"></label>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<div class="layout">
+<nav class="sidebar">
+  <div class="nav-section">
+    <div class="nav-label">Vue globale</div>
+    <button class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')"><i class="ti ti-layout-dashboard"></i> Tableau de bord</button>
+    <button class="nav-item" id="nav-import" onclick="showPage('import')"><i class="ti ti-upload"></i> Import relevés</button>
+    <button class="nav-item" id="nav-etiquetage" onclick="showPage('etiquetage')"><i class="ti ti-tags"></i> Étiquetage</button>
+    <button class="nav-item" id="nav-journal" onclick="showPage('journal')"><i class="ti ti-file-spreadsheet"></i> Journal global</button>
+  </div>
+  <div class="nav-section" id="nav-poles-section">
+    <div class="nav-label">Pôles</div>
+    <div id="nav-poles-list"></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Factures</div>
+    <button class="nav-item" id="nav-factures" onclick="showPage('factures')">
+      <i class="ti ti-receipt"></i> Suivi factures
+      <span id="nav-factures-badge" style="margin-left:auto;background:var(--red-l);color:var(--red);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;display:none">0</span>
+    </button>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Paramètres</div>
+    <button class="nav-item" id="nav-config" onclick="showPage('config')"><i class="ti ti-settings"></i> Configuration</button>
+    <button class="nav-item" id="nav-export" onclick="showPage('export')"><i class="ti ti-download"></i> Export / Bilan</button>
+  </div>
+  <div class="sidebar-footer">
+    <div class="sidebar-card">
+      <p style="font-weight:600;color:var(--purple-d);margin-bottom:4px">Exercice <span id="sb-exercice">2026</span></p>
+      <p id="sb-budget-total">Budget total : —</p>
+      <p id="sb-depenses-total" style="margin-top:2px">Dépenses saisies : —</p>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ═══════════════════════════════════════
+     DASHBOARD
+═══════════════════════════════════════ -->
+<div id="page-dashboard" class="page active">
+  <div class="page-header">
+    <h2>Tableau de bord — Coll.in</h2>
+    <p id="db-subtitle">Vue consolidée de tous les pôles</p>
+  </div>
+
+  <div class="card-grid" id="db-kpis">
+    <div class="metric"><div class="metric-label">Budget total</div><div class="metric-value" id="db-budget">—</div><div class="metric-sub">tous pôles</div></div>
+    <div class="metric"><div class="metric-label">Dépenses saisies</div><div class="metric-value warn" id="db-dep">0 €</div><div class="metric-sub" id="db-dep-sub">—</div></div>
+    <div class="metric"><div class="metric-label">Taux global</div><div class="metric-value" id="db-taux">0 %</div><div class="metric-sub">consommation</div></div>
+    <div class="metric"><div class="metric-label">Opérations</div><div class="metric-value ok" id="db-ops">0</div><div class="metric-sub" id="db-ops-sub">dont 0 étiquetées</div></div>
+    <div class="metric"><div class="metric-label">FEDER CAPs</div><div class="metric-value ok" id="db-feder">0 €</div><div class="metric-sub">mobilisé / 85 000 €</div></div>
+    <div class="metric"><div class="metric-label">Non étiquetées</div><div class="metric-value danger" id="db-nonetiq">0</div><div class="metric-sub">à traiter</div></div>
+  </div>
+
+  <div id="pole-cards-section" class="pole-grid"></div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="sec-header" style="margin-top:0">
+        <div class="sec-title"><i class="ti ti-chart-bar"></i> Consommation par pôle</div>
+      </div>
+      <div id="db-barres"></div>
+    </div>
+    <div class="card">
+      <div class="sec-header" style="margin-top:0">
+        <div class="sec-title"><i class="ti ti-chart-donut"></i> Répartition des dépenses</div>
+      </div>
+      <div class="chart-legend" id="leg-rep"></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chart-rep" role="img" aria-label="Répartition dépenses par pôle">Aucune donnée.</canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.25rem">
+    <div class="sec-header" style="margin-top:0">
+      <div class="sec-title"><i class="ti ti-trending-up"></i> Évolution mensuelle cumulée</div>
+    </div>
+    <div class="chart-wrap" style="height:180px"><canvas id="chart-evol" role="img" aria-label="Évolution mensuelle cumulée">Aucune donnée.</canvas></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     IMPORT
+═══════════════════════════════════════ -->
+<div id="page-import" class="page">
+  <div class="page-header"><h2>Import relevés bancaires</h2><p>Importez vos exports CSV — toutes les opérations de Coll.in</p></div>
+
+  <div class="ib ib-blue"><i class="ti ti-info-circle"></i><span>Format attendu : colonnes <span class="code">Date</span>, <span class="code">Libellé</span>, <span class="code">Débit</span>. Séparateur <code>;</code> ou <code>,</code>. Encodage UTF-8. Les règles d'étiquetage mémorisées seront appliquées automatiquement.</span></div>
+
+  <div class="drop-zone" onclick="document.getElementById('file-releve').click()">
+    <i class="ti ti-building-bank"></i>
+    <strong>Relevé bancaire CSV</strong>
+    <p>Cliquer pour sélectionner · Export de votre espace en ligne</p>
+    <p style="margin-top:4px;font-size:11px">Format Crédit Agricole, BNP, CIC, Crédit Coopératif…</p>
+  </div>
+  <input type="file" id="file-releve" accept=".csv" style="display:none" onchange="importCSV(this)">
+
+  <div id="import-preview" style="margin-top:1rem"></div>
+  <div id="import-actions" style="display:none;margin-top:1rem">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="import-count" style="font-size:13px;color:var(--text2)"></span>
+      <button class="btn btn-primary" onclick="validerImport()"><i class="ti ti-check"></i> Importer ces opérations</button>
+      <button class="btn btn-secondary" onclick="annulerImport()"><i class="ti ti-x"></i> Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ÉTIQUETAGE
+═══════════════════════════════════════ -->
+<div id="page-etiquetage" class="page">
+  <div class="page-header"><h2>Étiquetage des opérations</h2><p>Affectez chaque opération à un pôle, sous-projet et catégorie de dépense</p></div>
+
+  <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:1rem">
+    <div class="fgroup" style="min-width:130px">
+      <label>Filtre pôle</label>
+      <select id="etiq-filtre-pole" onchange="renderEtiquetage()" style="height:32px;font-size:12px">
+        <option value="">Tous</option>
+        <option value="__non_etiq__">Non étiquetées</option>
+      </select>
+    </div>
+    <div class="fgroup" style="min-width:130px">
+      <label>Filtre mois</label>
+      <select id="etiq-filtre-mois" onchange="renderEtiquetage()" style="height:32px;font-size:12px">
+        <option value="">Tous</option>
+      </select>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="appliquerRegles()"><i class="ti ti-wand"></i> Appliquer règles mémorisées</button>
+    <button class="btn btn-secondary btn-sm" onclick="renderEtiquetage()"><i class="ti ti-refresh"></i> Actualiser</button>
+  </div>
+
+  <div class="card" style="padding:0">
+    <div class="etiq-row etiq-head">
+      <span>Date</span><span>Libellé</span><span>Montant</span><span>Pôle</span><span>Sous-projet</span><span>Catégorie</span><span></span>
+    </div>
+    <div id="etiq-list" style="max-height:520px;overflow-y:auto"></div>
+    <div style="padding:.75rem 1rem;border-top:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span id="etiq-count" style="font-size:12px;color:var(--text2)">0 opération(s)</span>
+      <button class="btn btn-primary btn-sm" onclick="sauvegarderEtiquetage()"><i class="ti ti-device-floppy"></i> Sauvegarder l'étiquetage</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     JOURNAL GLOBAL
+═══════════════════════════════════════ -->
+<div id="page-journal" class="page">
+  <div class="page-header"><h2>Journal analytique global</h2><p>Toutes les opérations étiquetées</p></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:flex-end">
+    <div class="fgroup" style="min-width:120px"><label>Pôle</label><select id="j-pole" onchange="renderJournal()" style="height:32px;font-size:12px"><option value="">Tous</option></select></div>
+    <div class="fgroup" style="min-width:120px"><label>Mois</label><select id="j-mois" onchange="renderJournal()" style="height:32px;font-size:12px"><option value="">Tous</option></select></div>
+    <div class="fgroup" style="min-width:130px"><label>Catégorie</label><select id="j-cat" onchange="renderJournal()" style="height:32px;font-size:12px"><option value="">Toutes</option></select></div>
+    <button class="btn btn-secondary btn-sm" onclick="resetJournal()" style="align-self:flex-end;height:32px"><i class="ti ti-filter-off"></i></button>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="tw"><table>
+      <thead><tr><th>Date</th><th>Libellé</th><th>Pôle</th><th>Sous-projet</th><th>Catégorie</th><th>Montant</th><th>Part FEDER</th><th>Ventilation</th></tr></thead>
+      <tbody id="j-tbody"></tbody>
+      <tfoot><tr class="tf"><td colspan="5">Total filtré</td><td id="j-total">0,00 €</td><td id="j-total-feder">—</td><td></td></tr></tfoot>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE PÔLE (dynamique)
+═══════════════════════════════════════ -->
+<div id="page-pole" class="page">
+  <div id="pole-content"></div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CONFIGURATION
+═══════════════════════════════════════ -->
+<div id="page-config" class="page">
+  <div class="page-header"><h2>Configuration</h2><p>Pôles, sous-projets, budgets et clés de répartition</p></div>
+
+  <!-- Config FEDER -->
+  <div class="cfg-banner">
+    <div class="cfg-field"><label><i class="ti ti-key" style="font-size:12px"></i> Code analytique FEDER</label><input type="text" id="cfg-code" value="CAPs-FEDER" oninput="updateCfg()" style="width:160px"></div>
+    <div class="cfg-field"><label><i class="ti ti-percentage" style="font-size:12px"></i> Clé FEDER</label><input type="number" id="cfg-taux-feder" value="48" min="1" max="100" step=".1" oninput="updateCfg()" style="width:60px"><span style="font-size:13px;color:var(--purple-d);font-weight:500">%</span></div>
+    <div class="cfg-field"><label><i class="ti ti-currency-euro" style="font-size:12px"></i> FEDER accordé</label><input type="number" id="cfg-feder" value="85000" step="100" oninput="updateCfg()" style="width:90px"><span style="font-size:13px;color:var(--purple-d);font-weight:500">€</span></div>
+  </div>
+
+  <!-- Pôles -->
+  <div class="sec-header"><div class="sec-title"><i class="ti ti-layout-columns"></i> Pôles & sous-projets</div>
+    <button class="btn btn-primary btn-sm" onclick="ouvrirModalPole()"><i class="ti ti-plus"></i> Ajouter un pôle</button>
+  </div>
+  <div id="poles-config-list" style="display:flex;flex-direction:column;gap:10px"></div>
+
+  <!-- Règles d'étiquetage -->
+  <div class="sec-header" style="margin-top:1.5rem"><div class="sec-title"><i class="ti ti-wand"></i> Règles d'étiquetage mémorisées</div>
+    <button class="btn btn-danger btn-sm" onclick="clearRegles()"><i class="ti ti-trash"></i> Effacer tout</button>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="tw"><table>
+      <thead><tr><th>Libellé (contient)</th><th>Pôle</th><th>Sous-projet</th><th>Catégorie</th><th></th></tr></thead>
+      <tbody id="regles-tbody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- Catégories de dépenses -->
+  <div class="sec-header" style="margin-top:1.5rem"><div class="sec-title"><i class="ti ti-tag"></i> Catégories de dépenses</div></div>
+  <div class="ib ib-blue"><i class="ti ti-info-circle"></i><span>Ces catégories s'appliquent à tous les pôles. Les catégories marquées FEDER sont comptabilisées dans le suivi CAPs.</span></div>
+  <div class="card" style="padding:0">
+    <div class="tw"><table>
+      <thead><tr><th>Catégorie</th><th>Code comptable</th><th>Éligible FEDER</th><th>Description</th></tr></thead>
+      <tbody id="cats-tbody"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     EXPORT
+═══════════════════════════════════════ -->
+<div id="page-export" class="page">
+  <div class="page-header"><h2>Export & Bilans</h2><p>Documents pour cofinanceurs, Bureau et banque</p></div>
+
+  <!-- Bilan structure consolidé -->
+  <div class="sec-title" style="margin-bottom:.875rem"><i class="ti ti-building"></i> Bilan consolidé — Coll.in</div>
+  <div class="card" style="margin-bottom:1.25rem;padding:0">
+    <div class="tw"><table>
+      <thead><tr><th>Pôle</th><th>Code analytique</th><th>Budget prévu</th><th>Dépenses saisies</th><th>Taux</th><th>Factures en attente</th><th>Clé répart.</th></tr></thead>
+      <tbody id="bilan-poles-tbody"></tbody>
+      <tfoot><tr class="tf">
+        <td colspan="2">Total Coll.in</td>
+        <td id="bilan-total-budget">—</td>
+        <td id="bilan-total-dep">—</td>
+        <td id="bilan-total-taux">—</td>
+        <td id="bilan-total-fac">—</td>
+        <td>100 %</td>
+      </tr></tfoot>
+    </table></div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="sec-title" style="margin-bottom:.75rem"><i class="ti ti-file-description"></i> Récapitulatif FEDER</div>
+      <div class="card card-sm" id="recap-global" style="margin-bottom:1rem;font-size:13px">
+        <table><tbody id="recap-tbody"></tbody></table>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title" style="margin-bottom:.75rem"><i class="ti ti-download"></i> Exports disponibles</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="card card-sm" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="exportCSVGlobal()">
+          <i class="ti ti-table-export" style="font-size:22px;color:var(--text2);flex-shrink:0"></i>
+          <div style="flex:1"><p style="font-weight:600;font-size:13px">Journal global CSV</p><p style="font-size:12px;color:var(--text2)">Toutes opérations étiquetées avec ventilation</p></div>
+          <i class="ti ti-arrow-right" style="color:var(--text3)"></i>
+        </div>
+        <div class="card card-sm" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="exportCSVPole('CAPS')">
+          <i class="ti ti-report-money" style="font-size:22px;color:var(--text2);flex-shrink:0"></i>
+          <div style="flex:1"><p style="font-weight:600;font-size:13px">Journal CAPs-FEDER CSV</p><p style="font-size:12px;color:var(--text2)">Pour instruction FEDER — Région Occitanie</p></div>
+          <i class="ti ti-arrow-right" style="color:var(--text3)"></i>
+        </div>
+        <div class="card card-sm" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="exportBilanFEDER()">
+          <i class="ti ti-file-text" style="font-size:22px;color:var(--text2);flex-shrink:0"></i>
+          <div style="flex:1"><p style="font-weight:600;font-size:13px">Bilan narratif FEDER (TXT)</p><p style="font-size:12px;color:var(--text2)">Rapport mensuel signable</p></div>
+          <i class="ti ti-arrow-right" style="color:var(--text3)"></i>
+        </div>
+        <div class="card card-sm" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="exportBilanStructure()">
+          <i class="ti ti-building" style="font-size:22px;color:var(--text2);flex-shrink:0"></i>
+          <div style="flex:1"><p style="font-weight:600;font-size:13px">Bilan structure CSV</p><p style="font-size:12px;color:var(--text2)">Tous pôles + factures — pour Bureau et ASB Conseil</p></div>
+          <i class="ti ti-arrow-right" style="color:var(--text3)"></i>
+        </div>
+        <div class="card card-sm" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="exportFacturesCSV()">
+          <i class="ti ti-receipt" style="font-size:22px;color:var(--text2);flex-shrink:0"></i>
+          <div style="flex:1"><p style="font-weight:600;font-size:13px">Suivi factures CSV</p><p style="font-size:12px;color:var(--text2)">Toutes factures avec statuts — pour rapprochement bancaire</p></div>
+          <i class="ti ti-arrow-right" style="color:var(--text3)"></i>
+        </div>
+        <div class="card card-sm" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="exportJSON()">
+          <i class="ti ti-database-export" style="font-size:22px;color:var(--text2);flex-shrink:0"></i>
+          <div style="flex:1"><p style="font-weight:600;font-size:13px">Sauvegarde complète JSON</p><p style="font-size:12px;color:var(--text2)">À déposer sur Nextcloud mensuellement</p></div>
+          <i class="ti ti-arrow-right" style="color:var(--text3)"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- MODAL PÔLE -->
+<div class="modal-bg" id="modal-pole">
+  <div class="modal">
+    <h3 id="modal-pole-title">Nouveau pôle</h3>
+    <div class="fg fg-2" style="margin-bottom:10px">
+      <div class="fgroup"><label>Nom du pôle</label><input type="text" id="mp-nom" placeholder="Ex : Formation professionnelle"></div>
+      <div class="fgroup"><label>Code</label><input type="text" id="mp-code" placeholder="Ex : FORM" style="text-transform:uppercase"></div>
+    </div>
+    <div class="fg fg-2" style="margin-bottom:10px">
+      <div class="fgroup"><label>Code analytique</label><input type="text" id="mp-code-analytique" placeholder="Ex : FORM-2026"></div>
+      <div class="fgroup"><label>Taux de répartition (%)</label><input type="number" id="mp-taux" placeholder="Ex : 35" min="0" max="100" step="0.1"><span style="font-size:11px;color:var(--text3);margin-top:3px;display:block">Part des dépenses communes imputées à ce pôle</span></div>
+    </div>
+    <div class="fg fg-3" style="margin-bottom:10px">
+      <div class="fgroup"><label>Budget (€)</label><input type="number" id="mp-budget" placeholder="0" step="100"></div>
+      <div class="fgroup"><label>Couleur</label>
+        <select id="mp-couleur">
+          <option value="purple">Violet</option><option value="teal">Vert</option>
+          <option value="amber">Amber</option><option value="blue">Bleu</option>
+          <option value="coral">Corail</option><option value="green">Vert foncé</option>
+        </select>
+      </div>
+      <div class="fgroup"><label>Suivi FEDER</label>
+        <select id="mp-feder"><option value="non">Non</option><option value="oui">Oui</option></select>
+      </div>
+    </div>
+    <!-- Sous-projets -->
+    <div style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Sous-projets</span>
+        <button class="btn btn-secondary btn-xs" onclick="ajouterSousProjet()"><i class="ti ti-plus"></i> Ajouter</button>
+      </div>
+      <div id="sous-projets-list"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-secondary" onclick="fermerModalPole()">Annuler</button>
+      <button class="btn btn-primary" onclick="sauvegarderPole()"><i class="ti ti-check"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SUIVI FACTURES
+═══════════════════════════════════════ -->
+<div id="page-factures" class="page">
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div><h2>Suivi des factures fournisseurs</h2><p>Circuit complet : réception → vérification → enregistrement → paiement → clôture</p></div>
+    <button class="btn btn-primary" onclick="ouvrirModalFacture()"><i class="ti ti-plus"></i> Nouvelle facture</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="card-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:1.25rem" id="fac-kpis">
+    <div class="metric"><div class="metric-label">Reçues</div><div class="metric-value" id="fac-k-recue">0</div><div class="metric-sub">à traiter</div></div>
+    <div class="metric"><div class="metric-label">Vérifiées</div><div class="metric-value warn" id="fac-k-verif">0</div><div class="metric-sub">en attente MaCompta</div></div>
+    <div class="metric"><div class="metric-label">Enregistrées</div><div class="metric-value warn" id="fac-k-enreg">0</div><div class="metric-sub">en attente paiement</div></div>
+    <div class="metric"><div class="metric-label">Payées</div><div class="metric-value ok" id="fac-k-payee">0</div><div class="metric-sub">en attente clôture</div></div>
+    <div class="metric"><div class="metric-label">En retard</div><div class="metric-value danger" id="fac-k-retard">0</div><div class="metric-sub">&gt; 30 jours sans paiement</div></div>
+  </div>
+
+  <!-- Alertes -->
+  <div id="fac-alertes" style="margin-bottom:1rem"></div>
+
+  <!-- Filtres -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:1rem">
+    <div class="fgroup" style="min-width:130px">
+      <label>Statut</label>
+      <select id="fac-f-statut" onchange="renderFactures()" style="height:32px;font-size:12px">
+        <option value="">Tous</option>
+        <option value="recue">Reçue</option>
+        <option value="verifiee">Vérifiée</option>
+        <option value="enregistree">Enregistrée</option>
+        <option value="payee">Payée</option>
+        <option value="cloturee">Clôturée</option>
+      </select>
+    </div>
+    <div class="fgroup" style="min-width:130px">
+      <label>Pôle</label>
+      <select id="fac-f-pole" onchange="renderFactures()" style="height:32px;font-size:12px">
+        <option value="">Tous</option>
+      </select>
+    </div>
+    <div class="fgroup" style="min-width:130px">
+      <label>Responsable</label>
+      <select id="fac-f-resp" onchange="renderFactures()" style="height:32px;font-size:12px">
+        <option value="">ToutEs</option>
+      </select>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="resetFiltresFactures()" style="align-self:flex-end;height:32px"><i class="ti ti-filter-off"></i></button>
+    <button class="btn btn-secondary btn-sm" onclick="exportFacturesCSV()" style="align-self:flex-end;height:32px"><i class="ti ti-table-export"></i> Export CSV</button>
+  </div>
+
+  <!-- Table -->
+  <div class="card" style="padding:0">
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Réf. facture</th><th>Fournisseur</th><th>Montant TTC</th><th>Date réception</th><th>Pôle</th>
+          <th>Statut</th><th>Responsable</th><th>Date paiement</th><th>Réf. virement</th><th>Retard</th><th></th>
+        </tr></thead>
+        <tbody id="fac-tbody"></tbody>
+        <tfoot><tr class="tf">
+          <td colspan="2">Total filtré</td>
+          <td id="fac-total">0,00 €</td>
+          <td colspan="8"></td>
+        </tr></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FACTURE -->
+<div class="modal-bg" id="modal-facture">
+  <div class="modal" style="width:600px">
+    <h3 id="modal-fac-title">Nouvelle facture</h3>
+
+    <!-- Bloc identité facture -->
+    <div style="background:var(--bg2);border-radius:var(--r);padding:.875rem;margin-bottom:1rem">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:.75rem">Identité de la facture</p>
+      <div class="fg fg-3" style="margin-bottom:8px">
+        <div class="fgroup"><label>Référence facture *</label><input type="text" id="mf-ref" placeholder="Ex : FAC-2026-042"></div>
+        <div class="fgroup"><label>Fournisseur *</label><input type="text" id="mf-fourn" placeholder="Ex : Aggelos"></div>
+        <div class="fgroup"><label>Montant TTC (€) *</label><input type="number" id="mf-montant" step="0.01" min="0" placeholder="0.00"></div>
+      </div>
+      <div class="fg fg-3">
+        <div class="fgroup"><label>Date de réception</label><input type="date" id="mf-date-recep"></div>
+        <div class="fgroup"><label>Date d'échéance</label><input type="date" id="mf-date-echeance"></div>
+        <div class="fgroup"><label>N° de commande</label><input type="text" id="mf-commande" placeholder="Optionnel"></div>
+      </div>
+    </div>
+
+    <!-- Bloc affectation -->
+    <div style="background:var(--bg2);border-radius:var(--r);padding:.875rem;margin-bottom:1rem">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:.75rem">Affectation analytique</p>
+      <div class="fg fg-3">
+        <div class="fgroup"><label>Pôle</label>
+          <select id="mf-pole" onchange="updateMfSP()"><option value="">—</option></select>
+        </div>
+        <div class="fgroup"><label>Sous-projet</label>
+          <select id="mf-sousprj"><option value="">—</option></select>
+        </div>
+        <div class="fgroup"><label>Catégorie</label>
+          <select id="mf-cat"><option value="">—</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloc circuit -->
+    <div style="background:var(--bg2);border-radius:var(--r);padding:.875rem;margin-bottom:1rem">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:.75rem">Circuit de traitement</p>
+      <div class="fg fg-2" style="margin-bottom:8px">
+        <div class="fgroup"><label>Statut actuel *</label>
+          <select id="mf-statut" onchange="togglePaiementFields()">
+            <option value="recue">Reçue</option>
+            <option value="verifiee">Vérifiée</option>
+            <option value="enregistree">Enregistrée dans MaCompta</option>
+            <option value="payee">Payée</option>
+            <option value="cloturee">Clôturée</option>
+          </select>
+        </div>
+        <div class="fgroup"><label>Responsable</label>
+          <select id="mf-resp">
+            <option value="">—</option>
+            <option value="Pauline">Pauline Picat</option>
+            <option value="Gwladys">Gwladys</option>
+            <option value="Sarah">Sarah Lobre</option>
+            <option value="Mangalya">Mangalya</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+      </div>
+      <!-- Champs paiement — visibles uniquement si statut = payée ou clôturée -->
+      <div id="mf-paiement-fields" style="display:none">
+        <div class="ib ib-amber" style="margin-bottom:.75rem"><i class="ti ti-alert-triangle"></i><span><strong>Règle obligatoire :</strong> renseigner la date et le libellé exact du virement bancaire pour valider le paiement.</span></div>
+        <div class="fg fg-2">
+          <div class="fgroup"><label>Date de paiement *</label><input type="date" id="mf-date-paie"></div>
+          <div class="fgroup"><label>Libellé exact du virement *</label><input type="text" id="mf-libelle-virement" placeholder="Libellé tel qu'il apparaît sur le relevé"></div>
+        </div>
+        <div class="fg fg-2" style="margin-top:8px">
+          <div class="fgroup"><label>Payé par</label>
+            <select id="mf-paye-par">
+              <option value="">—</option>
+              <option value="Pauline">Pauline Picat</option>
+              <option value="Gwladys">Gwladys</option>
+              <option value="Sarah">Sarah Lobre</option>
+              <option value="Mangalya">Mangalya</option>
+            </select>
+          </div>
+          <div class="fgroup"><label>Réf. enregistrement MaCompta</label><input type="text" id="mf-ref-compta" placeholder="Ex : ACH-2026-042"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloc pièce jointe -->
+    <div style="background:var(--bg2);border-radius:var(--r);padding:.875rem;margin-bottom:1rem">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:.75rem">Pièce jointe</p>
+      <div id="mf-pj-zone">
+        <label class="drop-zone" style="padding:1rem;cursor:pointer" for="mf-pj-input">
+          <i class="ti ti-file-invoice" style="font-size:20px"></i>
+          <strong style="font-size:13px">Joindre le PDF de la facture</strong>
+          <p style="font-size:11px">Cliquer pour sélectionner · PDF, max 5 Mo</p>
+        </label>
+        <input type="file" id="mf-pj-input" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="chargerPJ(this)">
+      </div>
+      <div id="mf-pj-preview" style="display:none;align-items:center;gap:10px;padding:.5rem;background:var(--teal-l);border-radius:var(--r)">
+        <i class="ti ti-file-check" style="color:var(--teal);font-size:20px"></i>
+        <span id="mf-pj-nom" style="font-size:13px;color:var(--teal);flex:1"></span>
+        <button class="btn btn-danger btn-xs" onclick="supprimerPJ()"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="fgroup" style="margin-bottom:1rem">
+      <label>Notes / observations</label>
+      <input type="text" id="mf-notes" placeholder="Vérification effectuée par…, objet de la facture, lien avec le projet…">
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:space-between">
+      <button class="btn btn-danger btn-sm" id="mf-btn-suppr" onclick="supprimerFacture()" style="display:none"><i class="ti ti-trash"></i> Supprimer</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-secondary" onclick="fermerModalFacture()">Annuler</button>
+        <button class="btn btn-primary" onclick="validerFacture()"><i class="ti ti-check"></i> Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ÉDITION OPÉRATION -->
+<div class="modal-bg" id="modal-edit">
+  <div class="modal">
+    <h3>Modifier l'opération</h3>
+    <div class="fg fg-2" style="margin-bottom:10px">
+      <div class="fgroup"><label>Date</label><input type="date" id="ed-date"></div>
+      <div class="fgroup"><label>Montant (€)</label><input type="number" id="ed-montant" step="0.01"></div>
+    </div>
+    <div class="fgroup" style="margin-bottom:10px">
+      <label>Libellé</label><input type="text" id="ed-libelle">
+    </div>
+    <div class="fg fg-2" style="margin-bottom:10px">
+      <div class="fgroup"><label>Réf. pièce comptable</label><input type="text" id="ed-ref" placeholder="Ex : FAC-2026-042"></div>
+      <div class="fgroup"><label>Statut justificatif</label>
+        <select id="ed-statut">
+          <option value="en_attente">En attente</option>
+          <option value="valide">Validé</option>
+          <option value="manquant">Manquant</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg fg-3" style="margin-bottom:10px">
+      <div class="fgroup"><label>Pôle</label>
+        <select id="ed-pole" onchange="updateEdSousPrj()">
+          <option value="">—</option>
+        </select>
+      </div>
+      <div class="fgroup"><label>Sous-projet</label>
+        <select id="ed-sousprj"><option value="">—</option></select>
+      </div>
+      <div class="fgroup"><label>Catégorie</label>
+        <select id="ed-cat">
+          <option value="">—</option>
+        </select>
+      </div>
+    </div>
+    <div class="fgroup" style="margin-bottom:10px">
+      <label>Notes / observations</label>
+      <input type="text" id="ed-notes" placeholder="Prorata, période, observations FEDER…">
+    </div>
+    <div style="background:var(--bg2);border-radius:var(--r);padding:.75rem;font-size:12px;color:var(--text2);margin-bottom:1rem">
+      <strong style="color:var(--text)">Champs pièce comptable</strong> — la référence saisie sera visible dans les exports CSV et le bilan narratif.
+    </div>
+    <div style="display:flex;gap:8px;justify-content:space-between;margin-top:.5rem">
+      <button class="btn btn-danger btn-sm" onclick="supprimerOperation()"><i class="ti ti-trash"></i> Supprimer</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="fermerModalEdit()">Annuler</button>
+        <button class="btn btn-primary" onclick="validerEdit()"><i class="ti ti-check"></i> Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VENTILATION -->
+<div class="modal-bg" id="modal-vent">
+  <div class="modal">
+    <h3>Ventilation manuelle</h3>
+    <div id="vent-info" style="font-size:13px;color:var(--text2);margin-bottom:1rem"></div>
+    <div id="vent-rows"></div>
+    <div class="vent-total" id="vent-total">Total : 0 %</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+      <button class="btn btn-secondary" onclick="fermerModalVent()">Annuler</button>
+      <button class="btn btn-primary" onclick="validerVentilation()"><i class="ti ti-check"></i> Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><i id="toast-icon" class="ti ti-check"></i><span id="toast-msg">OK</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+const MOIS_LBL = {'2025-10':'Oct 25','2025-11':'Nov 25','2025-12':'Déc 25','2026-01':'Jan 26','2026-02':'Fév 26','2026-03':'Mar 26','2026-04':'Avr 26','2026-05':'Mai 26','2026-06':'Jun 26','2026-07':'Jul 26','2026-08':'Aoû 26','2026-09':'Sep 26','2026-10':'Oct 26','2026-11':'Nov 26','2026-12':'Déc 26','2027-01':'Jan 27','2027-02':'Fév 27','2027-03':'Mar 27','2027-04':'Avr 27'};
+
+const POLE_COLORS = {purple:'#534AB7',teal:'#0F6E56',amber:'#BA7517',blue:'#185FA5',coral:'#993C1D',green:'#3B6D11'};
+const POLE_BG = {purple:'var(--purple-l)',teal:'var(--teal-l)',amber:'var(--amber-l)',blue:'var(--blue-l)',coral:'var(--coral-l)',green:'var(--green-l)'};
+const POLE_TEXT = {purple:'var(--purple-d)',teal:'var(--teal)',amber:'var(--amber)',blue:'var(--blue)',coral:'var(--coral)',green:'var(--green)'};
+
+let state = {
+  config: { code:'CAPs-FEDER', tauxFeder:48, feder:85000 },
+  poles: [
+    { id:'CAPS', nom:'CAPs — FEDER', code:'CAPS', codeAnalytique:'CAPs-FEDER', taux:48, budget:304925, couleur:'purple', feder:true, sousProjets:[] },
+    { id:'FORM', nom:'Formation professionnelle', code:'FORM', codeAnalytique:'FORM-2026', taux:35, budget:151661, couleur:'teal', feder:false, sousProjets:[] },
+    { id:'SERV', nom:'Services & accompagnement', code:'SERV', codeAnalytique:'SERV-2026', taux:12, budget:80000, couleur:'amber', feder:false,
+      sousProjets:[{ id:'CINM', nom:'CINM', budget:4100, financeurs:'PREF 2 000 € + TM 2 100 €' }] },
+    { id:'FONC', nom:'Fonctionnement général', code:'FONC', codeAnalytique:'FONC-2026', taux:5, budget:0, couleur:'blue', feder:false, sousProjets:[], ventileAuto:true }
+  ],
+  categories: [
+    { id:'personnel', nom:'Personnel (salaires + charges)', codes:'641,645', feder:true },
+    { id:'prestations', nom:'Prestations externes', codes:'611,621', feder:true },
+    { id:'communication', nom:'Communication & déplacements', codes:'623,625', feder:true },
+    { id:'fonctionnement', nom:'Fonctionnement', codes:'606,613,626', feder:false },
+    { id:'subvention', nom:'Subvention reçue', codes:'74', feder:false, credit:true },
+    { id:'autre', nom:'Autre', codes:'', feder:false },
+  ],
+  operations: [],     // toutes les opérations importées
+  regles: [],         // règles d'étiquetage mémorisées [{libelle_contains, pole, sousPrj, cat}]
+  importBuffer: [],   // opérations en attente de validation
+  factures: [],       // suivi des factures fournisseurs
+};
+
+let editPoleId = null;
+let ventOpId = null;
+let chartRep = null, chartEvol = null;
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  chargerLS();
+  if (!state.factures) state.factures = [];
+  syncCfgInputs();
+  renderNav();
+  updateAll();
+});
+
+function updateAll() {
+  renderNav();
+  renderPoleCards();
+  renderDashboard();
+  renderPolesConfig();
+  renderRegles();
+  renderCats();
+  renderFiltresEtiquetage();
+  renderEtiquetage();
+  renderJournalFiltres();
+  renderJournal();
+  renderExport();
+  updateSidebar();
+  renderKpisFactures();
+}
+
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════════════════
+function showPage(id, poleId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (id === 'factures') {
+    document.getElementById('page-factures').classList.add('active');
+    const nav = document.getElementById('nav-factures');
+    if (nav) nav.classList.add('active');
+    showPage_factures();
+    return;
+  }
+  if (id === 'pole' && poleId) {
+    document.getElementById('page-pole').classList.add('active');
+    renderPolePage(poleId);
+    const navEl = document.getElementById('nav-pole-' + poleId);
+    if (navEl) navEl.classList.add('active');
+  } else {
+    const pg = document.getElementById('page-' + id);
+    if (pg) pg.classList.add('active');
+    const nav = document.getElementById('nav-' + id);
+    if (nav) nav.classList.add('active');
+    if (id === 'export') { renderExport(); drawCharts(); }
+    if (id === 'etiquetage') renderEtiquetage();
+    if (id === 'journal') { renderJournalFiltres(); renderJournal(); }
+    if (id === 'dashboard') drawCharts();
+  }
+}
+
+function renderNav() {
+  const list = document.getElementById('nav-poles-list');
+  list.innerHTML = state.poles.map(p => `
+    <button class="nav-item" id="nav-pole-${p.id}" onclick="showPage('pole','${p.id}')">
+      <span class="nav-dot" style="background:${POLE_COLORS[p.couleur]}"></span>
+      ${p.nom}
+      ${p.feder ? '<span class="badge b-purple" style="font-size:10px;padding:1px 5px;margin-left:auto">FEDER</span>' : ''}
+    </button>
+    ${p.sousProjets && p.sousProjets.length ? p.sousProjets.map(sp => `
+      <div class="nav-sub">
+        <button class="nav-item" onclick="showPage('pole','${p.id}')">
+          <i class="ti ti-corner-down-right" style="font-size:12px"></i>${sp.nom}
+        </button>
+      </div>`).join('') : ''}
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const totalBudget = calcBudgetTotal();
+  const ops = state.operations;
+  const etiq = ops.filter(o => o.pole);
+  const totalDep = etiq.reduce((s,o) => s + montantNet(o), 0);
+  const taux = totalBudget > 0 ? Math.round(totalDep / totalBudget * 100) : 0;
+  const nonEtiq = ops.filter(o => !o.pole).length;
+
+  // FEDER
+  const capsDep = etiq.filter(o => o.pole === 'CAPS' && isFederEligible(o.cat));
+  const federMob = capsDep.reduce((s,o) => s + montantNet(o), 0) * (state.config.tauxFeder/100);
+
+  document.getElementById('db-budget').textContent = fmtInt(totalBudget);
+  document.getElementById('db-dep').textContent = fmtInt(totalDep);
+  document.getElementById('db-dep-sub').textContent = 'sur ' + fmtInt(totalBudget) + ' prévu';
+  document.getElementById('db-taux').textContent = taux + ' %';
+  document.getElementById('db-taux').className = 'metric-value ' + (taux < 20 ? 'warn' : 'ok');
+  document.getElementById('db-ops').textContent = ops.length;
+  document.getElementById('db-ops-sub').textContent = 'dont ' + etiq.length + ' étiquetées';
+  document.getElementById('db-feder').textContent = fmtInt(federMob);
+  document.getElementById('db-nonetiq').textContent = nonEtiq;
+  document.getElementById('db-nonetiq').className = 'metric-value ' + (nonEtiq > 0 ? 'danger' : 'ok');
+
+  // Barres par pôle
+  const barres = document.getElementById('db-barres');
+  barres.innerHTML = state.poles.map(p => {
+    const pDep = etiq.filter(o => o.pole === p.id).reduce((s,o) => s + montantNet(o), 0);
+    const pBudget = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
+    const pct = pBudget > 0 ? Math.min(100, Math.round(pDep / pBudget * 100)) : 0;
+    return `<div class="prog-block">
+      <div class="prog-meta"><span class="l">${p.nom}</span><span class="r">${fmtInt(pDep)} / ${fmtInt(pBudget)}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${POLE_COLORS[p.couleur]}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderPoleCards() {
+  const sec = document.getElementById('pole-cards-section');
+  const etiq = state.operations.filter(o => o.pole);
+  sec.innerHTML = state.poles.map(p => {
+    const pDep = etiq.filter(o => o.pole === p.id).reduce((s,o) => s + montantNet(o), 0);
+    const pBudget = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
+    const pct = pBudget > 0 ? Math.min(100, Math.round(pDep / pBudget * 100)) : 0;
+    return `<div class="pole-card" onclick="showPage('pole','${p.id}')">
+      <div class="pole-header">
+        <div class="pole-name"><span style="width:10px;height:10px;border-radius:50%;background:${POLE_COLORS[p.couleur]};display:inline-block;flex-shrink:0"></span>${p.nom}</div>
+        ${p.feder ? '<span class="badge b-purple" style="font-size:10px">FEDER</span>' : ''}
+      </div>
+      <div class="pole-bar"><div class="pole-fill" style="width:${pct}%;background:${POLE_COLORS[p.couleur]}"></div></div>
+      <div class="pole-stats"><span>${fmtInt(pDep)} dépensés</span><span>${pct} % du budget</span></div>
+      ${p.sousProjets && p.sousProjets.length ? `<div style="margin-top:8px;font-size:11px;color:var(--text3)">${p.sousProjets.length} sous-projet(s)</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// PAGE PÔLE
+// ══════════════════════════════════════════════════════════════
+function renderPolePage(poleId) {
+  const p = state.poles.find(x => x.id === poleId);
+  if (!p) return;
+  const etiq = state.operations.filter(o => o.pole === poleId);
+  const totalDep = etiq.reduce((s,o) => s + montantNet(o), 0);
+  const pBudget = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
+  const taux = pBudget > 0 ? Math.round(totalDep / pBudget * 100) : 0;
+  const color = POLE_COLORS[p.couleur];
+
+  let federSection = '';
+  if (p.feder) {
+    const federElig = etiq.filter(o => isFederEligible(o.cat));
+    const federDep = federElig.reduce((s,o) => s + montantNet(o), 0);
+    const federMob = federDep * (state.config.tauxFeder / 100);
+    const federTaux = state.config.feder > 0 ? Math.round(federMob / state.config.feder * 100) : 0;
+    federSection = `
+      <div class="card" style="border-left:3px solid ${color};margin-bottom:1.25rem">
+        <div class="sec-title" style="margin-bottom:.875rem"><i class="ti ti-star"></i> Suivi FEDER — <span class="code">${state.config.code}</span></div>
+        <div class="card-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="metric"><div class="metric-label">FEDER accordé</div><div class="metric-value">${fmtInt(state.config.feder)}</div></div>
+          <div class="metric"><div class="metric-label">Dépenses éligibles</div><div class="metric-value warn">${fmtInt(federDep)}</div></div>
+          <div class="metric"><div class="metric-label">FEDER mobilisé (${state.config.tauxFeder}%)</div><div class="metric-value ok">${fmtInt(federMob)}</div></div>
+          <div class="metric"><div class="metric-label">Taux consommation</div><div class="metric-value ${federTaux < 20 ? 'warn' : 'ok'}">${federTaux} %</div></div>
+        </div>
+        <div style="margin-top:.875rem">
+          <div class="prog-block">
+            <div class="prog-meta"><span class="l">Personnel</span><span class="r">${fmtInt(etiq.filter(o=>o.cat==='personnel').reduce((s,o)=>s+montantNet(o),0))} / 198 103 €</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.round(etiq.filter(o=>o.cat==='personnel').reduce((s,o)=>s+montantNet(o),0)/198103*100))}%;background:#3266ad"></div></div>
+          </div>
+          <div class="prog-block">
+            <div class="prog-meta"><span class="l">Prestations ext.</span><span class="r">${fmtInt(etiq.filter(o=>o.cat==='prestations').reduce((s,o)=>s+montantNet(o),0))} / 102 502 €</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.round(etiq.filter(o=>o.cat==='prestations').reduce((s,o)=>s+montantNet(o),0)/102502*100))}%;background:${color}"></div></div>
+          </div>
+          <div class="prog-block">
+            <div class="prog-meta"><span class="l">Communication</span><span class="r">${fmtInt(etiq.filter(o=>o.cat==='communication').reduce((s,o)=>s+montantNet(o),0))} / 4 320 €</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,Math.round(etiq.filter(o=>o.cat==='communication').reduce((s,o)=>s+montantNet(o),0)/4320*100))}%;background:#BA7517"></div></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Sous-projets
+  let spSection = '';
+  if (p.sousProjets && p.sousProjets.length) {
+    spSection = `<div class="sec-header"><div class="sec-title"><i class="ti ti-folders"></i> Sous-projets</div></div>
+    <div class="card-grid" style="margin-bottom:1.25rem">
+      ${p.sousProjets.map(sp => {
+        const spDep = etiq.filter(o => o.sousPrj === sp.id).reduce((s,o) => s+montantNet(o), 0);
+        const spPct = sp.budget > 0 ? Math.min(100, Math.round(spDep / sp.budget * 100)) : 0;
+        return `<div class="metric" style="border-left:3px solid ${color}">
+          <div class="metric-label">${sp.nom}</div>
+          <div class="metric-value" style="font-size:18px">${fmtInt(spDep)}</div>
+          <div class="pole-bar" style="margin-top:6px"><div class="pole-fill" style="width:${spPct}%;background:${color}"></div></div>
+          <div class="metric-sub">${spPct} % sur ${fmtInt(sp.budget)}${sp.financeurs ? ' · ' + sp.financeurs : ''}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  // Table des opérations
+  const rows = etiq.length ? etiq.sort((a,b)=>a.date.localeCompare(b.date)).map(o => {
+    const cat = state.categories.find(c => c.id === o.cat);
+    const sp = p.sousProjets.find(s => s.id === o.sousPrj);
+    const feder = p.feder && isFederEligible(o.cat) ? fmt(montantNet(o) * state.config.tauxFeder / 100) : '—';
+    const refBadge = o.ref ? `<br><span class="code" style="font-size:10px">${o.ref}</span>` : '';
+    return `<tr>
+      <td style="white-space:nowrap">${o.date}</td>
+      <td>${o.libelle}${refBadge}${o.notes?'<br><span style="font-size:10px;color:var(--text3)">'+o.notes+'</span>':''}</td>
+      <td>${sp ? '<span class="badge b-gray">'+sp.nom+'</span>' : '—'}</td>
+      <td>${cat ? '<span class="badge" style="background:'+POLE_BG[p.couleur]+';color:'+POLE_TEXT[p.couleur]+'">'+cat.nom+'</span>' : '—'}</td>
+      <td style="text-align:right">${fmt(montantNet(o))}</td>
+      <td style="text-align:right">${feder}</td>
+      <td>${o.statut ? statutBadge(o.statut) : '<span class="badge b-gray">—</span>'}<button class="btn btn-secondary btn-xs" style="margin-left:4px" onclick="ouvrirEdit('${o.id}')" title="Modifier"><i class="ti ti-edit"></i></button></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">Aucune opération étiquetée sur ce pôle</td></tr>';
+
+  document.getElementById('pole-content').innerHTML = `
+    <div class="page-header" style="display:flex;align-items:center;gap:12px">
+      <span style="width:12px;height:12px;border-radius:50%;background:${color};display:inline-block"></span>
+      <div><h2>${p.nom}</h2><p>Budget : ${fmtInt(pBudget)} · Consommé : ${fmtInt(totalDep)} (${taux} %)</p></div>
+      <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="ouvrirModalPole('${p.id}')"><i class="ti ti-edit"></i> Modifier</button>
+    </div>
+    ${federSection}
+    ${spSection}
+    <div class="sec-header"><div class="sec-title"><i class="ti ti-list"></i> Opérations <span class="badge b-gray" style="margin-left:4px">${etiq.length}</span></div></div>
+    <div class="card" style="padding:0">
+      <div class="tw"><table>
+        <thead><tr><th>Date</th><th>Libellé</th><th>Sous-projet</th><th>Catégorie</th><th>Montant</th><th>Part FEDER</th><th>Statut</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="tf"><td colspan="4">Total</td><td style="text-align:right">${fmt(totalDep)}</td><td colspan="2"></td></tr></tfoot>
+      </table></div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// IMPORT CSV
+// ══════════════════════════════════════════════════════════════
+function parseCSVLine(line, sep) {
+  // Parseur CSV robuste — gère les champs entre guillemets contenant le séparateur
+  const cols = [];
+  let cur = '', inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQuote = !inQuote; }
+    else if (c === sep && !inQuote) { cols.push(cur.trim()); cur = ''; }
+    else { cur += c; }
+  }
+  cols.push(cur.trim());
+  return cols;
+}
+
+function importCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    const lines = text.split('\n').filter(l => l.trim());
+
+    // ── Détecter le séparateur : ; en priorité, sinon ,
+    const sep = lines[0].includes(';') ? ';' : ',';
+
+    // ── Trouver la ligne d'en-tête (contient "date" ET "lib")
+    let headerLine = -1;
+    for (let i = 0; i < Math.min(10, lines.length); i++) {
+      const l = lines[i].toLowerCase();
+      if (l.includes('date') && l.includes('lib')) { headerLine = i; break; }
+    }
+    const startLine = headerLine >= 0 ? headerLine + 1 : 0;
+
+    // ── Identifier les indices de colonnes depuis l'en-tête
+    let colDate = 0, colLib = 1, colDebit = 2, colCredit = -1;
+    if (headerLine >= 0) {
+      const headers = parseCSVLine(lines[headerLine], sep).map(h => h.toLowerCase().replace(/[éè]/g,'e').replace(/[àâ]/g,'a'));
+      headers.forEach((h, i) => {
+        if (h.includes('date'))   colDate   = i;
+        if (h.includes('lib'))    colLib    = i;
+        if (h.includes('deb'))    colDebit  = i;
+        if (h.includes('cred'))   colCredit = i;
+      });
+    }
+
+    const parsed = [];
+    for (let i = startLine; i < lines.length; i++) {
+      const cols = parseCSVLine(lines[i], sep);
+      const dateRaw = (cols[colDate] || '').trim();
+      if (!dateRaw.match(/\d{2}\/\d{2}\/\d{4}/)) continue;
+      const dateISO = dateRaw.split('/').reverse().join('-');
+      const libelle = (cols[colLib] || '').trim();
+      if (!libelle) continue;
+
+      // Montant : débit (négatif) ou crédit (positif)
+      // Nettoyer : enlever guillemets, espaces, remplacer virgule décimale
+      const nettoyer = s => parseFloat(
+        (s||'').replace(/"/g,'').replace(/\s/g,'').replace(',','.')
+      ) || 0;
+
+      let montant = 0;
+      const debitRaw  = nettoyer(cols[colDebit]  || '');
+      const creditRaw = colCredit >= 0 ? nettoyer(cols[colCredit] || '') : 0;
+
+      if (debitRaw < 0)       montant = debitRaw;          // déjà négatif
+      else if (debitRaw > 0)  montant = -debitRaw;         // positif → on le passe négatif
+      else if (creditRaw > 0) montant = creditRaw;         // crédit → positif
+
+      parsed.push({
+        id: Date.now() + '_' + i,
+        date: dateISO,
+        libelle,
+        montant,
+        pole: null, sousPrj: null, cat: null,
+        statut: 'en_attente', ventilation: null,
+        source: 'banque'
+      });
+    }
+
+    if (!parsed.length) {
+      document.getElementById('import-preview').innerHTML = `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i>Aucune opération détectée. Vérifiez le format du fichier (colonnes Date, Libellé, Débit attendues).</div>`;
+      document.getElementById('import-actions').style.display = 'none';
+      return;
+    }
+
+    state.importBuffer = parsed;
+    const credits = parsed.filter(o => o.montant > 0).length;
+    const debits  = parsed.filter(o => o.montant < 0).length;
+    document.getElementById('import-preview').innerHTML = `
+      <div class="ib ib-green"><i class="ti ti-check"></i>
+        <span><strong>${file.name}</strong> — <strong>${parsed.length}</strong> opération(s) détectées
+        · ${debits} débit(s) · ${credits} crédit(s)
+        · séparateur « ${sep} » · en-tête ligne ${headerLine+1}</span>
+      </div>
+      <div class="card" style="padding:0"><div class="tw"><table>
+        <thead><tr><th>Date</th><th>Libellé</th><th style="text-align:right">Montant</th></tr></thead>
+        <tbody>${parsed.slice(0,10).map(o=>`<tr>
+          <td style="white-space:nowrap">${o.date}</td>
+          <td>${o.libelle}</td>
+          <td style="text-align:right;${o.montant<0?'color:var(--red)':'color:var(--teal)'}">${fmt(o.montant)}</td>
+        </tr>`).join('')}
+        ${parsed.length > 10 ? `<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:.5rem">… ${parsed.length - 10} autres opérations</td></tr>` : ''}
+        </tbody></table></div></div>`;
+    document.getElementById('import-count').textContent = parsed.length + ' opérations à importer';
+    document.getElementById('import-actions').style.display = 'flex';
+  };
+  reader.readAsText(file, 'utf-8');
+  input.value = '';
+}
+
+function validerImport() {
+  // Éviter les doublons (même date + libellé + montant)
+  const existing = new Set(state.operations.map(o => o.date + '|' + o.libelle + '|' + o.montant));
+  const news = state.importBuffer.filter(o => !existing.has(o.date + '|' + o.libelle + '|' + o.montant));
+  // Appliquer les règles mémorisées
+  news.forEach(o => appliquerRegle(o));
+  state.operations.push(...news);
+  state.importBuffer = [];
+  document.getElementById('import-preview').innerHTML = `<div class="ib ib-green"><i class="ti ti-check"></i>${news.length} nouvelle(s) opération(s) importée(s). ${state.importBuffer.length > news.length ? (state.importBuffer.length - news.length) + ' doublons ignorés.' : ''}</div>`;
+  document.getElementById('import-actions').style.display = 'none';
+  sauvegarder(true);
+  updateAll();
+  toast(news.length + ' opérations importées');
+}
+
+function annulerImport() {
+  state.importBuffer = [];
+  document.getElementById('import-preview').innerHTML = '';
+  document.getElementById('import-actions').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// ÉTIQUETAGE
+// ══════════════════════════════════════════════════════════════
+function renderFiltresEtiquetage() {
+  const fp = document.getElementById('etiq-filtre-pole');
+  const cur = fp.value;
+  fp.innerHTML = '<option value="">Tous</option><option value="__non_etiq__">Non étiquetées</option>' +
+    state.poles.map(p => `<option value="${p.id}" ${p.id===cur?'selected':''}>${p.nom}</option>`).join('');
+
+  const fm = document.getElementById('etiq-filtre-mois');
+  const curm = fm.value;
+  const moisDispo = [...new Set(state.operations.map(o => o.date.substring(0,7)).filter(Boolean))].sort();
+  fm.innerHTML = '<option value="">Tous</option>' + moisDispo.map(m => `<option value="${m}" ${m===curm?'selected':''}>${MOIS_LBL[m]||m}</option>`).join('');
+}
+
+function renderEtiquetage() {
+  const fp = document.getElementById('etiq-filtre-pole').value;
+  const fm = document.getElementById('etiq-filtre-mois').value;
+  let ops = state.operations;
+  if (fp === '__non_etiq__') ops = ops.filter(o => !o.pole);
+  else if (fp) ops = ops.filter(o => o.pole === fp);
+  if (fm) ops = ops.filter(o => o.date.startsWith(fm));
+  ops = [...ops].sort((a,b) => a.date.localeCompare(b.date));
+
+  document.getElementById('etiq-count').textContent = ops.length + ' opération(s) affichée(s)';
+
+  const poleOpts = '<option value="">—</option>' + state.poles.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
+  const catOpts = '<option value="">—</option>' + state.categories.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+
+  if (!ops.length) {
+    document.getElementById('etiq-list').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text3);font-size:13px">Aucune opération à afficher</div>';
+    return;
+  }
+
+  document.getElementById('etiq-list').innerHTML = ops.map(o => {
+    const pole = state.poles.find(p => p.id === o.pole);
+    const spOpts = pole && pole.sousProjets.length
+      ? '<option value="">—</option>' + pole.sousProjets.map(sp => `<option value="${sp.id}" ${o.sousPrj===sp.id?'selected':''}>${sp.nom}</option>`).join('')
+      : '<option value="">—</option>';
+    return `<div class="etiq-row" id="erow-${o.id}">
+      <span style="color:var(--text2)">${o.date}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.libelle}">${o.libelle}</span>
+      <span style="text-align:right;font-weight:500">${fmt(o.montant)}</span>
+      <select onchange="setEtiqPole('${o.id}',this.value)">${poleOpts.replace(`value="${o.pole||''}"`,`value="${o.pole||''}" selected`)}</select>
+      <select id="sp-${o.id}" onchange="setEtiqSP('${o.id}',this.value)">${spOpts}</select>
+      <select onchange="setEtiqCat('${o.id}',this.value)">${catOpts.replace(`value="${o.cat||''}"`,`value="${o.cat||''}" selected`)}</select>
+      <button class="btn btn-secondary btn-xs" onclick="ouvrirVentilation('${o.id}')" title="Ventilation manuelle"><i class="ti ti-percentage"></i></button>
+    </div>`;
+  }).join('');
+}
+
+function setEtiqPole(id, val) {
+  const op = state.operations.find(o => o.id === id);
+  if (!op) return;
+  op.pole = val || null;
+  op.sousPrj = null;
+  // Mettre à jour le select sous-projet
+  const pole = state.poles.find(p => p.id === val);
+  const spSel = document.getElementById('sp-' + id);
+  if (spSel) {
+    spSel.innerHTML = pole && pole.sousProjets.length
+      ? '<option value="">—</option>' + pole.sousProjets.map(sp => `<option value="${sp.id}">${sp.nom}</option>`).join('')
+      : '<option value="">—</option>';
+  }
+  // Mémoriser la règle
+  memoriserRegle(op);
+}
+
+function setEtiqSP(id, val) {
+  const op = state.operations.find(o => o.id === id);
+  if (op) { op.sousPrj = val || null; memoriserRegle(op); }
+}
+
+function setEtiqCat(id, val) {
+  const op = state.operations.find(o => o.id === id);
+  if (op) { op.cat = val || null; memoriserRegle(op); }
+}
+
+function memoriserRegle(op) {
+  if (!op.pole || !op.cat) return;
+  const key = normaliserLibelle(op.libelle);
+  if (!key || key.length < 5) return;
+  const existing = state.regles.find(r => r.key === key);
+  if (existing) { existing.pole = op.pole; existing.sousPrj = op.sousPrj; existing.cat = op.cat; }
+  else state.regles.push({ key, libelle: op.libelle.substring(0,40), pole: op.pole, sousPrj: op.sousPrj, cat: op.cat });
+  renderRegles();
+}
+
+function normaliserLibelle(s) {
+  return s.replace(/\d{4,}/g, '').replace(/[^\w\s]/g, '').trim().toUpperCase().substring(0, 30);
+}
+
+function appliquerRegle(op) {
+  const key = normaliserLibelle(op.libelle);
+  const r = state.regles.find(r => r.key === key || op.libelle.toUpperCase().includes(r.key));
+  if (r) { op.pole = r.pole; op.sousPrj = r.sousPrj; op.cat = r.cat; }
+}
+
+function appliquerRegles() {
+  let n = 0;
+  state.operations.filter(o => !o.pole).forEach(op => { appliquerRegle(op); if (op.pole) n++; });
+  sauvegarder(true);
+  renderEtiquetage();
+  updateAll();
+  toast(n + ' opérations étiquetées automatiquement');
+}
+
+function sauvegarderEtiquetage() {
+  sauvegarder(true);
+  updateAll();
+  toast('Étiquetage sauvegardé');
+}
+
+// ══════════════════════════════════════════════════════════════
+// VENTILATION MANUELLE
+// ══════════════════════════════════════════════════════════════
+function ouvrirVentilation(opId) {
+  ventOpId = opId;
+  const op = state.operations.find(o => o.id === opId);
+  if (!op) return;
+  document.getElementById('vent-info').innerHTML = `<strong>${op.libelle}</strong> · ${fmt(op.montant)}`;
+  const vent = op.ventilation || state.poles.filter(p=>!p.ventileAuto).reduce((acc,p)=>({...acc,[p.id]:p.id===op.pole?100:0}),{});
+  const rows = document.getElementById('vent-rows');
+  rows.innerHTML = state.poles.filter(p=>!p.ventileAuto).map(p => `
+    <div class="vent-row">
+      <div class="fgroup"><label><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${POLE_COLORS[p.couleur]};margin-right:4px"></span>${p.nom}</label></div>
+      <div class="fgroup"><label>Sous-projet</label>
+        <select id="vsp-${p.id}">${'<option value="">—</option>' + (p.sousProjets||[]).map(sp=>`<option value="${sp.id}">${sp.nom}</option>`).join('')}</select>
+      </div>
+      <div class="fgroup"><label>%</label><input type="number" id="vpct-${p.id}" value="${vent[p.id]||0}" min="0" max="100" step="1" oninput="updateVentTotal()"></div>
+    </div>`).join('');
+  updateVentTotal();
+  document.getElementById('modal-vent').classList.add('open');
+}
+
+function updateVentTotal() {
+  const total = state.poles.filter(p=>!p.ventileAuto).reduce((s,p) => {
+    return s + (parseFloat(document.getElementById('vpct-'+p.id)?.value)||0);
+  }, 0);
+  const el = document.getElementById('vent-total');
+  el.textContent = 'Total : ' + Math.round(total) + ' %';
+  el.style.color = Math.abs(total - 100) < 1 ? 'var(--teal)' : 'var(--red)';
+}
+
+function validerVentilation() {
+  const total = state.poles.filter(p=>!p.ventileAuto).reduce((s,p) => s + (parseFloat(document.getElementById('vpct-'+p.id)?.value)||0), 0);
+  if (Math.abs(total - 100) > 1) { toast('Le total doit être 100 %', 'warn'); return; }
+  const op = state.operations.find(o => o.id === ventOpId);
+  if (!op) return;
+  const vent = {};
+  state.poles.filter(p=>!p.ventileAuto).forEach(p => {
+    const pct = parseFloat(document.getElementById('vpct-'+p.id)?.value)||0;
+    if (pct > 0) vent[p.id] = { pct, sousPrj: document.getElementById('vsp-'+p.id)?.value || null };
+  });
+  op.ventilation = vent;
+  // Le pôle principal = celui avec le plus grand %
+  const main = Object.entries(vent).sort((a,b)=>b[1].pct-a[1].pct)[0];
+  if (main) { op.pole = main[0]; op.sousPrj = main[1].sousPrj; }
+  fermerModalVent();
+  sauvegarder(true);
+  renderEtiquetage();
+  updateAll();
+  toast('Ventilation appliquée');
+}
+
+function fermerModalVent() { document.getElementById('modal-vent').classList.remove('open'); ventOpId = null; }
+
+// ══════════════════════════════════════════════════════════════
+// ÉDITION D'OPÉRATION
+// ══════════════════════════════════════════════════════════════
+let editOpId = null;
+
+function ouvrirEdit(id) {
+  const op = state.operations.find(o => o.id === id);
+  if (!op) return;
+  editOpId = id;
+  document.getElementById('ed-date').value = op.date || '';
+  document.getElementById('ed-montant').value = Math.abs(op.montant || 0);
+  document.getElementById('ed-libelle').value = op.libelle || '';
+  document.getElementById('ed-ref').value = op.ref || '';
+  document.getElementById('ed-statut').value = op.statut || 'en_attente';
+  document.getElementById('ed-notes').value = op.notes || '';
+  // Pôle
+  const poleEl = document.getElementById('ed-pole');
+  poleEl.innerHTML = '<option value="">—</option>' + state.poles.map(p => `<option value="${p.id}" ${p.id===op.pole?'selected':''}>${p.nom}</option>`).join('');
+  // Sous-projet
+  updateEdSousPrj(op.sousPrj);
+  // Catégorie
+  document.getElementById('ed-cat').innerHTML = '<option value="">—</option>' + state.categories.map(c => `<option value="${c.id}" ${c.id===op.cat?'selected':''}>${c.nom}</option>`).join('');
+  document.getElementById('modal-edit').classList.add('open');
+}
+
+function updateEdSousPrj(curSP) {
+  const poleId = document.getElementById('ed-pole').value;
+  const pole = state.poles.find(p => p.id === poleId);
+  const sel = document.getElementById('ed-sousprj');
+  if (pole && pole.sousProjets && pole.sousProjets.length) {
+    sel.innerHTML = '<option value="">—</option>' + pole.sousProjets.map(sp => `<option value="${sp.id}" ${sp.id===(curSP||'')?'selected':''}>${sp.nom}</option>`).join('');
+    sel.disabled = false;
+  } else {
+    sel.innerHTML = '<option value="">—</option>';
+    sel.disabled = true;
+  }
+}
+
+function validerEdit() {
+  const op = state.operations.find(o => o.id === editOpId);
+  if (!op) return;
+  const date = document.getElementById('ed-date').value;
+  const libelle = document.getElementById('ed-libelle').value.trim();
+  if (!date || !libelle) { toast('Date et libellé requis', 'warn'); return; }
+  op.date = date;
+  op.libelle = libelle;
+  op.montant = -(Math.abs(parseFloat(document.getElementById('ed-montant').value) || 0));
+  op.ref = document.getElementById('ed-ref').value.trim();
+  op.statut = document.getElementById('ed-statut').value;
+  op.notes = document.getElementById('ed-notes').value.trim();
+  const newPole = document.getElementById('ed-pole').value;
+  if (newPole !== op.pole) { op.pole = newPole || null; op.sousPrj = null; }
+  op.sousPrj = document.getElementById('ed-sousprj').value || null;
+  op.cat = document.getElementById('ed-cat').value || null;
+  fermerModalEdit();
+  sauvegarder(true);
+  updateAll();
+  toast('Opération mise à jour');
+}
+
+function supprimerOperation() {
+  if (!confirm('Supprimer définitivement cette opération ?')) return;
+  state.operations = state.operations.filter(o => o.id !== editOpId);
+  fermerModalEdit();
+  sauvegarder(true);
+  updateAll();
+  toast('Opération supprimée');
+}
+
+function fermerModalEdit() {
+  document.getElementById('modal-edit').classList.remove('open');
+  editOpId = null;
+}
+
+// ══════════════════════════════════════════════════════════════
+// JOURNAL
+// ══════════════════════════════════════════════════════════════
+function renderJournalFiltres() {
+  const jp = document.getElementById('j-pole');
+  const jm = document.getElementById('j-mois');
+  const jc = document.getElementById('j-cat');
+  const curP=jp.value, curM=jm.value, curC=jc.value;
+  jp.innerHTML = '<option value="">Tous</option>' + state.poles.map(p=>`<option value="${p.id}" ${p.id===curP?'selected':''}>${p.nom}</option>`).join('');
+  const moisDispo = [...new Set(state.operations.map(o=>o.date.substring(0,7)).filter(Boolean))].sort();
+  jm.innerHTML = '<option value="">Tous</option>' + moisDispo.map(m=>`<option value="${m}" ${m===curM?'selected':''}>${MOIS_LBL[m]||m}</option>`).join('');
+  jc.innerHTML = '<option value="">Toutes</option>' + state.categories.map(c=>`<option value="${c.id}" ${c.id===curC?'selected':''}>${c.nom}</option>`).join('');
+}
+
+function renderJournal() {
+  const fp=document.getElementById('j-pole').value, fm=document.getElementById('j-mois').value, fc=document.getElementById('j-cat').value;
+  let ops = state.operations.filter(o=>o.pole);
+  if (fp) ops=ops.filter(o=>o.pole===fp);
+  if (fm) ops=ops.filter(o=>o.date.startsWith(fm));
+  if (fc) ops=ops.filter(o=>o.cat===fc);
+  ops.sort((a,b)=>a.date.localeCompare(b.date));
+
+  let tot=0, totFeder=0;
+  const tbody = document.getElementById('j-tbody');
+  if (!ops.length) {
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">Aucune opération pour ces critères</td></tr>';
+    document.getElementById('j-total').textContent='0,00 €';
+    document.getElementById('j-total-feder').textContent='—';
+    return;
+  }
+  tbody.innerHTML = ops.map(o => {
+    const pole = state.poles.find(p=>p.id===o.pole);
+    const cat = state.categories.find(c=>c.id===o.cat);
+    const sp = pole?.sousProjets?.find(s=>s.id===o.sousPrj);
+    const m = montantNet(o); tot += m;
+    const feder = pole?.feder && isFederEligible(o.cat) ? m*(state.config.tauxFeder/100) : 0;
+    if (feder) totFeder += feder;
+    const ventBadge = o.ventilation ? `<span class="badge b-gray" style="font-size:10px">Ventilé</span>` : '';
+    const refBadge = o.ref ? `<span class="code" style="font-size:10px">${o.ref}</span>` : '';
+    const notesSpan = o.notes ? `<br><span style="font-size:11px;color:var(--text3)">${o.notes}</span>` : '';
+    return `<tr>
+      <td style="white-space:nowrap">${o.date}</td>
+      <td style="max-width:200px"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${o.libelle}</span>${refBadge}${notesSpan}</td>
+      <td>${pole?`<span class="badge" style="background:${POLE_BG[pole.couleur]||'var(--bg2)'};color:${POLE_TEXT[pole.couleur]||'var(--text2)'}">${pole.nom}</span>`:'—'}</td>
+      <td>${sp?'<span class="badge b-gray">'+sp.nom+'</span>':'—'}</td>
+      <td>${cat?cat.nom:'—'}</td>
+      <td style="text-align:right">${fmt(m)}</td>
+      <td style="text-align:right">${feder>0?fmt(feder):'—'}</td>
+      <td style="white-space:nowrap">${ventBadge}${o.statut?statutBadge(o.statut):''}<button class="btn btn-secondary btn-xs" style="margin-left:4px" onclick="ouvrirEdit('${o.id}')" title="Modifier"><i class="ti ti-edit"></i></button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('j-total').textContent = fmt(tot);
+  document.getElementById('j-total-feder').textContent = totFeder > 0 ? fmt(totFeder) : '—';
+}
+
+function resetJournal() {
+  document.getElementById('j-pole').value='';
+  document.getElementById('j-mois').value='';
+  document.getElementById('j-cat').value='';
+  renderJournal();
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONFIG PÔLES
+// ══════════════════════════════════════════════════════════════
+function renderPolesConfig() {
+  const list = document.getElementById('poles-config-list');
+  list.innerHTML = state.poles.map(p => {
+    const color = POLE_COLORS[p.couleur];
+    const pBudget = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
+    return `<div class="card card-sm" style="border-left:3px solid ${color}">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${color}"></span>
+          <strong style="font-size:14px">${p.nom}</strong>
+          <span class="code">${p.code}</span>
+          ${p.codeAnalytique ? `<span class="code" style="background:var(--purple-l);color:var(--purple-d)">${p.codeAnalytique}</span>` : ''}
+          ${p.taux ? `<span class="badge b-gray">${p.taux}%</span>` : ''}
+          ${p.feder?'<span class="badge b-purple">FEDER</span>':''}
+          ${p.ventileAuto?'<span class="badge b-blue">Ventilation auto</span>':''}
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:13px;color:var(--text2)">Budget : <strong>${fmtInt(pBudget)}</strong></span>
+          <button class="btn btn-secondary btn-xs" onclick="ouvrirModalPole('${p.id}')"><i class="ti ti-edit"></i> Modifier</button>
+          <button class="btn btn-danger btn-xs" onclick="supprimerPole('${p.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+      ${p.sousProjets && p.sousProjets.length ? `<div style="margin-top:8px;padding-top:8px;border-top:.5px solid var(--border);display:flex;flex-wrap:wrap;gap:6px">
+        ${p.sousProjets.map(sp=>`<span class="badge b-gray">${sp.nom} · ${fmtInt(sp.budget)}</span>`).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function ouvrirModalPole(id) {
+  editPoleId = id || null;
+  const p = id ? state.poles.find(x=>x.id===id) : null;
+  document.getElementById('modal-pole-title').textContent = p ? 'Modifier le pôle' : 'Nouveau pôle';
+  document.getElementById('mp-nom').value = p?.nom || '';
+  document.getElementById('mp-code').value = p?.code || '';
+  document.getElementById('mp-code-analytique').value = p?.codeAnalytique || '';
+  document.getElementById('mp-taux').value = p?.taux || '';
+  document.getElementById('mp-budget').value = p?.budget || '';
+  document.getElementById('mp-couleur').value = p?.couleur || 'teal';
+  document.getElementById('mp-feder').value = p?.feder ? 'oui' : 'non';
+  renderSousProjetsModal(p?.sousProjets || []);
+  document.getElementById('modal-pole').classList.add('open');
+}
+
+function fermerModalPole() { document.getElementById('modal-pole').classList.remove('open'); editPoleId = null; }
+
+function renderSousProjetsModal(sps) {
+  document.getElementById('sous-projets-list').innerHTML = sps.map((sp,i) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr 100px 28px;gap:6px;margin-bottom:6px;align-items:end">
+      <div class="fgroup"><label>Nom</label><input type="text" id="spnom-${i}" value="${sp.nom||''}" placeholder="Ex : CINM"></div>
+      <div class="fgroup"><label>Financeurs</label><input type="text" id="spfin-${i}" value="${sp.financeurs||''}" placeholder="Ex : PREF 2000€"></div>
+      <div class="fgroup"><label>Budget (€)</label><input type="number" id="spbud-${i}" value="${sp.budget||0}" step="100"></div>
+      <button class="btn btn-danger btn-xs" style="align-self:flex-end" onclick="supprimerSousProjet(${i})"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+}
+
+function ajouterSousProjet() {
+  const n = document.getElementById('sous-projets-list').children.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 100px 28px;gap:6px;margin-bottom:6px;align-items:end';
+  div.innerHTML = `
+    <div class="fgroup"><label>Nom</label><input type="text" id="spnom-${n}" placeholder="Ex : CINM"></div>
+    <div class="fgroup"><label>Financeurs</label><input type="text" id="spfin-${n}" placeholder="Ex : PREF 2000€"></div>
+    <div class="fgroup"><label>Budget (€)</label><input type="number" id="spbud-${n}" value="0" step="100"></div>
+    <button class="btn btn-danger btn-xs" style="align-self:flex-end" onclick="this.parentElement.remove()"><i class="ti ti-x"></i></button>`;
+  document.getElementById('sous-projets-list').appendChild(div);
+}
+
+function supprimerSousProjet(i) {
+  const list = document.getElementById('sous-projets-list');
+  if (list.children[i]) list.children[i].remove();
+}
+
+function sauvegarderPole() {
+  const nom = document.getElementById('mp-nom').value.trim();
+  const code = document.getElementById('mp-code').value.trim().toUpperCase();
+  if (!nom || !code) { toast('Nom et code requis', 'warn'); return; }
+  // Lire sous-projets
+  const spList = document.getElementById('sous-projets-list');
+  const sps = [];
+  for (let i = 0; i < spList.children.length; i++) {
+    const n = document.getElementById('spnom-'+i)?.value.trim();
+    if (n) sps.push({ id: code+'_'+n.toUpperCase().replace(/\s+/g,'_'), nom: n, budget: parseFloat(document.getElementById('spbud-'+i)?.value)||0, financeurs: document.getElementById('spfin-'+i)?.value.trim()||'' });
+  }
+  if (editPoleId) {
+    const p = state.poles.find(x=>x.id===editPoleId);
+    if (p) { p.nom=nom; p.code=code; p.codeAnalytique=document.getElementById('mp-code-analytique').value.trim(); p.taux=parseFloat(document.getElementById('mp-taux').value)||0; p.budget=parseFloat(document.getElementById('mp-budget').value)||0; p.couleur=document.getElementById('mp-couleur').value; p.feder=document.getElementById('mp-feder').value==='oui'; p.sousProjets=sps; }
+  } else {
+    state.poles.push({ id:code, nom, code, codeAnalytique:document.getElementById('mp-code-analytique').value.trim(), taux:parseFloat(document.getElementById('mp-taux').value)||0, budget:parseFloat(document.getElementById('mp-budget').value)||0, couleur:document.getElementById('mp-couleur').value, feder:document.getElementById('mp-feder').value==='oui', sousProjets:sps });
+  }
+  fermerModalPole();
+  sauvegarder(true);
+  updateAll();
+  toast('Pôle enregistré');
+}
+
+function supprimerPole(id) {
+  if (!confirm('Supprimer ce pôle ? Les opérations associées perdront leur étiquette.')) return;
+  state.poles = state.poles.filter(p=>p.id!==id);
+  state.operations.forEach(o => { if (o.pole===id) { o.pole=null; o.sousPrj=null; } });
+  sauvegarder(true);
+  updateAll();
+  toast('Pôle supprimé');
+}
+
+// ══════════════════════════════════════════════════════════════
+// RÈGLES & CATS
+// ══════════════════════════════════════════════════════════════
+function renderRegles() {
+  const tbody = document.getElementById('regles-tbody');
+  if (!state.regles.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text3)">Aucune règle mémorisée. Étiquetez des opérations pour en créer.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = state.regles.map((r,i) => {
+    const p = state.poles.find(x=>x.id===r.pole);
+    const cat = state.categories.find(c=>c.id===r.cat);
+    return `<tr>
+      <td><span class="code">${r.key}</span><br><span style="font-size:11px;color:var(--text3)">${r.libelle}</span></td>
+      <td>${p?`<span class="badge" style="background:${POLE_BG[p.couleur]};color:${POLE_TEXT[p.couleur]}">${p.nom}</span>`:'—'}</td>
+      <td>${r.sousPrj||'—'}</td>
+      <td>${cat?cat.nom:'—'}</td>
+      <td><button class="btn btn-danger btn-xs" onclick="supprimerRegle(${i})"><i class="ti ti-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function supprimerRegle(i) { state.regles.splice(i,1); sauvegarder(true); renderRegles(); }
+function clearRegles() { if (confirm('Effacer toutes les règles mémorisées ?')) { state.regles=[]; sauvegarder(true); renderRegles(); toast('Règles effacées'); } }
+
+function renderCats() {
+  document.getElementById('cats-tbody').innerHTML = state.categories.map(c => `<tr>
+    <td><strong>${c.nom}</strong></td>
+    <td><span class="code">${c.codes||'—'}</span></td>
+    <td>${c.feder?'<span class="badge b-teal">Oui</span>':'<span class="badge b-gray">Non</span>'}</td>
+    <td style="font-size:12px;color:var(--text2)">${c.credit?'Produit / encaissement':''}</td>
+  </tr>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════════════
+function renderExport() {
+  const etiq = state.operations.filter(o=>o.pole);
+  const totalBudget = calcBudgetTotal();
+  const totalDep = etiq.reduce((s,o)=>s+montantNet(o),0);
+  const totalTaux = totalBudget>0 ? Math.round(totalDep/totalBudget*100) : 0;
+  const facEnAttente = (state.factures||[]).filter(f=>!['payee','cloturee'].includes(f.statut));
+
+  // ── Bilan par pôle ──
+  const bilanTbody = document.getElementById('bilan-poles-tbody');
+  if (bilanTbody) {
+    bilanTbody.innerHTML = state.poles.map(p => {
+      const pDep = etiq.filter(o=>o.pole===p.id).reduce((s,o)=>s+montantNet(o),0);
+      const pBudget = (p.budget||0)+(p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
+      const pTaux = pBudget>0?Math.round(pDep/pBudget*100):0;
+      const pFac = facEnAttente.filter(f=>f.pole===p.id).length;
+      const color = POLE_COLORS[p.couleur];
+      return `<tr>
+        <td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:${color}"></span><strong>${p.nom}</strong></span></td>
+        <td><span class="code">${p.codeAnalytique||p.code}</span></td>
+        <td style="text-align:right">${fmtInt(pBudget)}</td>
+        <td style="text-align:right">${fmtInt(pDep)}</td>
+        <td style="text-align:right"><span class="badge ${pTaux>80?'b-red':pTaux>50?'b-amber':'b-gray'}">${pTaux} %</span></td>
+        <td style="text-align:center">${pFac>0?`<span class="badge b-amber">${pFac}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+        <td style="text-align:right">${p.taux||0} %</td>
+      </tr>`;
+    }).join('');
+    const bt = document.getElementById('bilan-total-budget'); if(bt) bt.textContent=fmtInt(totalBudget);
+    const bd = document.getElementById('bilan-total-dep'); if(bd) bd.textContent=fmtInt(totalDep);
+    const btt = document.getElementById('bilan-total-taux'); if(btt) btt.innerHTML=`<span class="badge ${totalTaux>80?'b-red':totalTaux>50?'b-amber':'b-gray'}">${totalTaux} %</span>`;
+    const bf = document.getElementById('bilan-total-fac'); if(bf) bf.textContent=facEnAttente.length||'—';
+  }
+
+  // ── Recap FEDER ──
+  const capsDep=etiq.filter(o=>o.pole==='CAPS'&&isFederEligible(o.cat)).reduce((s,o)=>s+montantNet(o),0);
+  const federMob=capsDep*state.config.tauxFeder/100;
+  const taux=state.config.feder>0?Math.round(federMob/state.config.feder*100):0;
+  const justi=(state.factures||[]).filter(f=>f.pole==='CAPS'&&f.statut==='cloturee').length;
+  const recapTbody = document.getElementById('recap-tbody');
+  if (recapTbody) {
+    recapTbody.innerHTML = `
+      <tr><td style="color:var(--text2);padding:6px 0">Organisme</td><td style="font-weight:600;text-align:right;padding:6px 0">Association Coll.in</td></tr>
+      <tr><td style="color:var(--text2);padding:6px 0;border-top:.5px solid var(--border)">Réf. FEDER</td><td style="font-weight:600;text-align:right;padding:6px 0;border-top:.5px solid var(--border)"><span class="code">OCC015401</span></td></tr>
+      <tr><td style="color:var(--text2);padding:6px 0;border-top:.5px solid var(--border)">Code analytique</td><td style="font-weight:600;text-align:right;padding:6px 0;border-top:.5px solid var(--border)"><span class="code">${state.config.code}</span></td></tr>
+      <tr><td style="color:var(--text2);padding:6px 0;border-top:.5px solid var(--border)">Clé FEDER</td><td style="font-weight:600;text-align:right;padding:6px 0;border-top:.5px solid var(--border)">${state.config.tauxFeder} %</td></tr>
+      <tr style="background:var(--bg2)"><td style="color:var(--text2);padding:6px 0;border-top:.5px solid var(--border2)">FEDER accordé</td><td style="font-weight:600;text-align:right;padding:6px 0;border-top:.5px solid var(--border2)">${fmt(state.config.feder)}</td></tr>
+      <tr><td style="color:var(--text2);padding:6px 0;border-top:.5px solid var(--border)">Dépenses éligibles</td><td style="font-weight:600;text-align:right;padding:6px 0;border-top:.5px solid var(--border)">${fmt(capsDep)}</td></tr>
+      <tr><td style="color:var(--text2);padding:6px 0;border-top:.5px solid var(--border)">FEDER mobilisé</td><td style="font-weight:600;text-align:right;padding:6px 0;border-top:.5px solid var(--border);color:var(--teal)">${fmt(federMob)}</td></tr>
+      <tr><td style="color:var(--text2);padding:6px 0;border-top:.5px solid var(--border)">Taux consommation</td><td style="font-weight:600;text-align:right;padding:6px 0;border-top:.5px solid var(--border)">${taux} %</td></tr>
+      <tr><td style="color:var(--text2);padding:6px 0;border-top:.5px solid var(--border)">Factures clôturées CAPs</td><td style="font-weight:600;text-align:right;padding:6px 0;border-top:.5px solid var(--border)">${justi}</td></tr>`;
+  }
+}
+
+function exportBilanStructure() {
+  const etiq = state.operations.filter(o=>o.pole);
+  const BOM='\uFEFF', sep=';';
+  const h=['Pôle','Code analytique','Taux répartition (%)','Budget prévu (€)','Dépenses saisies (€)','Taux consommation (%)','Factures en attente'].join(sep);
+  const rows = state.poles.map(p=>{
+    const pDep=etiq.filter(o=>o.pole===p.id).reduce((s,o)=>s+montantNet(o),0);
+    const pBudget=(p.budget||0)+(p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
+    const pTaux=pBudget>0?Math.round(pDep/pBudget*100):0;
+    const pFac=(state.factures||[]).filter(f=>f.pole===p.id&&!['payee','cloturee'].includes(f.statut)).length;
+    return [p.nom,p.codeAnalytique||p.code,p.taux||0,pBudget.toFixed(2).replace('.',','),pDep.toFixed(2).replace('.',','),pTaux,pFac].join(sep);
+  }).join('\n');
+  const tb=calcBudgetTotal(), td=etiq.reduce((s,o)=>s+montantNet(o),0);
+  const footer=['TOTAL','',100,tb.toFixed(2).replace('.',','),td.toFixed(2).replace('.',','),tb>0?Math.round(td/tb*100):0,(state.factures||[]).filter(f=>!['payee','cloturee'].includes(f.statut)).length].join(sep);
+  dl(BOM+h+'\n'+rows+'\n'+footer,'Collin_bilan_structure_'+today()+'.csv','text/csv;charset=utf-8');
+  toast('Bilan structure exporté');
+}
+
+// ══════════════════════════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════════════════════════
+function drawCharts() {
+  const etiq = state.operations.filter(o=>o.pole);
+  const colors = state.poles.map(p => POLE_COLORS[p.couleur]);
+  const data = state.poles.map(p => Math.round(etiq.filter(o=>o.pole===p.id).reduce((s,o)=>s+montantNet(o),0)));
+
+  if (chartRep) chartRep.destroy();
+  const ctxR = document.getElementById('chart-rep');
+  if (ctxR) {
+    chartRep = new Chart(ctxR, { type:'doughnut', data:{ labels:state.poles.map(p=>p.nom), datasets:[{data, backgroundColor:colors, borderWidth:0, hoverOffset:4}] }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}} });
+    document.getElementById('leg-rep').innerHTML = state.poles.map((p,i)=>`<div class="leg-item"><div class="leg-dot" style="background:${colors[i]}"></div>${p.nom} — ${fmtInt(data[i])}</div>`).join('');
+  }
+
+  if (chartEvol) chartEvol.destroy();
+  const moisSort = [...new Set(state.operations.map(o=>o.date.substring(0,7)).filter(Boolean))].sort();
+  const ctxE = document.getElementById('chart-evol');
+  if (ctxE && moisSort.length) {
+    chartEvol = new Chart(ctxE, {
+      type:'line',
+      data:{ labels:moisSort.map(m=>MOIS_LBL[m]||m), datasets: state.poles.map((p,i) => {
+        let cumul=0;
+        return { label:p.nom, data:moisSort.map(m=>{ cumul+=etiq.filter(o=>o.pole===p.id&&o.date.startsWith(m)).reduce((s,o)=>s+montantNet(o),0); return Math.round(cumul); }), borderColor:colors[i], backgroundColor:'transparent', tension:.3, pointRadius:3 };
+      })},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>v.toLocaleString('fr-FR')+'€',font:{size:11}}},x:{ticks:{font:{size:11}}}}}
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// SIDEBAR
+// ══════════════════════════════════════════════════════════════
+function updateSidebar() {
+  const totalBudget = calcBudgetTotal();
+  const totalDep = state.operations.filter(o=>o.pole).reduce((s,o)=>s+montantNet(o),0);
+  const taux = totalBudget > 0 ? Math.round(totalDep/totalBudget*100) : 0;
+  document.getElementById('sb-budget-total').textContent = 'Budget : ' + fmtInt(totalBudget);
+  document.getElementById('sb-depenses-total').textContent = 'Dépensé : ' + fmtInt(totalDep) + ' (' + taux + '%)';
+}
+
+function calcBudgetTotal() {
+  return state.poles.reduce((s,p) => {
+    const pBudget = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
+    return s + pBudget;
+  }, 0);
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════════════
+function syncCfgInputs() {
+  document.getElementById('cfg-code').value = state.config.code;
+  document.getElementById('cfg-taux-feder').value = state.config.tauxFeder;
+  document.getElementById('cfg-feder').value = state.config.feder;
+}
+
+function updateCfg() {
+  state.config.code = document.getElementById('cfg-code').value.trim() || 'CAPs-FEDER';
+  state.config.tauxFeder = parseFloat(document.getElementById('cfg-taux-feder').value) || 48;
+  state.config.feder = parseFloat(document.getElementById('cfg-feder').value) || 85000;
+  sauvegarder(true);
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORTS FICHIERS
+// ══════════════════════════════════════════════════════════════
+function exportCSVGlobal() {
+  const ops = state.operations.filter(o=>o.pole).sort((a,b)=>a.date.localeCompare(b.date));
+  if (!ops.length) { toast('Aucune opération étiquetée', 'warn'); return; }
+  const BOM = '\uFEFF', sep = ';';
+  const h = ['Date','Libellé','Pôle','Sous-projet','Catégorie','Code analytique','Montant (€)','Part FEDER (€)','Ventilation'].join(sep);
+  const rows = ops.map(o => {
+    const pole = state.poles.find(p=>p.id===o.pole);
+    const sp = pole?.sousProjets?.find(s=>s.id===o.sousPrj);
+    const cat = state.categories.find(c=>c.id===o.cat);
+    const m = montantNet(o);
+    const feder = pole?.feder && isFederEligible(o.cat) ? (m*state.config.tauxFeder/100).toFixed(2).replace('.',',') : '';
+    return [o.date,'"'+o.libelle+'"',pole?.nom||'',sp?.nom||'',cat?.nom||'',pole?.feder?state.config.code:'',m.toFixed(2).replace('.',','),feder,o.ventilation?'Ventilé':''].join(sep);
+  }).join('\n');
+  dl(BOM+h+'\n'+rows,'CollinAnalytique_global_'+today()+'.csv','text/csv;charset=utf-8');
+  toast('Export CSV téléchargé');
+}
+
+function exportCSVPole(poleId) {
+  const pole = state.poles.find(p=>p.id===poleId);
+  if (!pole) return;
+  const ops = state.operations.filter(o=>o.pole===poleId).sort((a,b)=>a.date.localeCompare(b.date));
+  if (!ops.length) { toast('Aucune opération pour ce pôle', 'warn'); return; }
+  const BOM='\uFEFF',sep=';';
+  const h=['Date','Code analytique','Libellé','Sous-projet','Catégorie','Montant TTC (€)','Part FEDER (€)','Statut'].join(sep);
+  const rows = ops.map(o=>{
+    const sp=pole.sousProjets?.find(s=>s.id===o.sousPrj);
+    const cat=state.categories.find(c=>c.id===o.cat);
+    const m=montantNet(o);
+    const feder=pole.feder&&isFederEligible(o.cat)?(m*state.config.tauxFeder/100).toFixed(2).replace('.',','):'';
+    return [o.date,pole.feder?state.config.code:pole.code,'"'+o.libelle+'"',sp?.nom||'',cat?.nom||'',m.toFixed(2).replace('.',','),feder,o.statut||''].join(sep);
+  }).join('\n');
+  dl(BOM+h+'\n'+rows,'Collin_'+poleId+'_'+today()+'.csv','text/csv;charset=utf-8');
+  toast('Export '+poleId+' téléchargé');
+}
+
+function exportBilanFEDER() {
+  const etiq=state.operations.filter(o=>o.pole==='CAPS');
+  const capsDep=etiq.filter(o=>isFederEligible(o.cat)).reduce((s,o)=>s+montantNet(o),0);
+  const federMob=capsDep*state.config.tauxFeder/100;
+  const taux=state.config.feder>0?Math.round(federMob/state.config.feder*100):0;
+  const txt=`BILAN MENSUEL — Projet CAPs · Association Coll.in
+Référence dossier FEDER : OCC015401 · Code analytique : ${state.config.code}
+Période projet : oct. 2025 – avr. 2027 · Date : ${new Date().toLocaleDateString('fr-FR')}
+
+SUIVI FEDER
+───────────────────────────────────────────
+FEDER accordé :              ${fmt(state.config.feder)}
+Dépenses éligibles saisies : ${fmt(capsDep)}
+FEDER mobilisé (${state.config.tauxFeder} %) :  ${fmt(federMob)}
+Taux de consommation :       ${taux} %
+
+RÉPARTITION PAR CATÉGORIE
+───────────────────────────────────────────
+Personnel :        ${fmt(etiq.filter(o=>o.cat==='personnel').reduce((s,o)=>s+montantNet(o),0))} / 198 103 € prévu
+Prestations ext. : ${fmt(etiq.filter(o=>o.cat==='prestations').reduce((s,o)=>s+montantNet(o),0))} / 102 502 € prévu
+Communication :    ${fmt(etiq.filter(o=>o.cat==='communication').reduce((s,o)=>s+montantNet(o),0))} / 4 320 € prévu
+
+Certification — La coordinatrice générale certifie l'exactitude de ce bilan.
+Date : _______________   Signature : ___________________`;
+  dl(txt,'CAPs_FEDER_bilan_'+today()+'.txt','text/plain;charset=utf-8');
+  toast('Bilan FEDER exporté');
+}
+
+function exportJSON() {
+  const data={version:2,date:new Date().toISOString(),state};
+  dl(JSON.stringify(data,null,2),'Collin_analytique_'+today()+'.json','application/json');
+  toast('Export JSON téléchargé');
+}
+
+function importJSON(input) {
+  const file=input.files[0]; if (!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try {
+      const data=JSON.parse(e.target.result);
+
+      // ── Format v2 (nouvel outil multi-pôles) ──
+      if (data.version===2 && data.state) {
+        state={...state,...data.state};
+        syncCfgInputs();
+        sauvegarder(true);
+        updateAll();
+        toast('Import v2 réussi — '+state.operations.length+' opérations chargées');
+        return;
+      }
+
+      // ── Format v1 (ancien outil CAPs-FEDER seul) ──
+      if (data.version===1 && Array.isArray(data.depenses)) {
+        // Convertir les dépenses v1 en opérations v2
+        const converties = data.depenses.map(d => ({
+          id: d.id || Date.now()+'_'+Math.random(),
+          date: d.date || '',
+          libelle: d.libelle || '',
+          montant: -(Math.abs(d.montant||0)),  // négatif = débit
+          ref: d.ref || '',
+          source: d.source || 'autre',
+          statut: d.statut || 'en_attente',
+          notes: d.notes || '',
+          // Affectation automatique au pôle CAPs
+          pole: 'CAPS',
+          sousPrj: null,
+          cat: d.cat || null,
+          ventilation: null,
+          eligible: d.eligible !== false
+        }));
+        // Éviter les doublons si on réimporte
+        const existing = new Set(state.operations.map(o=>o.date+'|'+o.libelle+'|'+Math.abs(o.montant)));
+        const news = converties.filter(o=>!existing.has(o.date+'|'+o.libelle+'|'+Math.abs(o.montant)));
+        state.operations.push(...news);
+        // Mettre à jour la config FEDER si présente
+        if (data.config) {
+          state.config.code = data.config.code || state.config.code;
+          state.config.tauxFeder = data.config.taux || state.config.tauxFeder;
+          state.config.feder = data.config.feder || state.config.feder;
+          syncCfgInputs();
+        }
+        sauvegarder(true);
+        updateAll();
+        toast('Import v1 converti — '+news.length+' dépenses chargées sur le pôle CAPs');
+        return;
+      }
+
+      toast('Format JSON non reconnu', 'warn');
+    } catch(err) {
+      console.error(err);
+      toast('Erreur de lecture du fichier JSON', 'warn');
+    }
+  };
+  reader.readAsText(file,'utf-8');
+  input.value='';
+}
+
+// ══════════════════════════════════════════════════════════════
+// PERSISTENCE
+// ══════════════════════════════════════════════════════════════
+function sauvegarder(silent) {
+  try {
+    localStorage.setItem('collin_analytique_v2', JSON.stringify(state));
+    if (!silent) toast('Sauvegardé');
+  } catch { toast('Erreur sauvegarde','warn'); }
+}
+
+function chargerLS() {
+  try {
+    const s=localStorage.getItem('collin_analytique_v2');
+    if (!s) return;
+    const saved=JSON.parse(s);
+    state={...state,...saved};
+    syncCfgInputs();
+  } catch {}
+}
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+function montantNet(o) { return Math.abs(o.montant||0); }
+function isFederEligible(cat) { return ['personnel','prestations','communication'].includes(cat); }
+function fmt(n) { return (n||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+function fmtInt(n) { return Math.round(n||0).toLocaleString('fr-FR')+' €'; }
+function today() { return new Date().toISOString().slice(0,10).replace(/-/g,''); }
+function dl(content,filename,type) { const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=filename;a.click(); }
+function toast(msg,type) {
+  const t=document.getElementById('toast'),ic=document.getElementById('toast-icon');
+  document.getElementById('toast-msg').textContent=msg;
+  ic.className=type==='warn'?'ti ti-alert-triangle':'ti ti-check';
+  t.style.opacity='1'; clearTimeout(t._to);
+  t._to=setTimeout(()=>t.style.opacity='0',2500);
+}
+function statutBadge(s) {
+  const m={valide:['b-teal','Validé'],en_attente:['b-amber','En attente'],manquant:['b-red','Manquant']};
+  const [cls,lbl]=m[s]||['b-gray',s];
+  return `<span class="badge ${cls}">${lbl}</span>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// SUIVI FACTURES
+// ══════════════════════════════════════════════════════════════
+const FAC_STATUTS = {
+  recue:      { lbl:'Reçue',               cls:'b-blue',   icon:'ti-mail' },
+  verifiee:   { lbl:'Vérifiée',            cls:'b-purple', icon:'ti-check' },
+  enregistree:{ lbl:'Enregistrée',         cls:'b-amber',  icon:'ti-book' },
+  payee:      { lbl:'Payée',               cls:'b-teal',   icon:'ti-currency-euro' },
+  cloturee:   { lbl:'Clôturée',            cls:'b-gray',   icon:'ti-lock' },
+};
+const FAC_RESPONSABLES = ['Pauline','Gwladys','Sarah','Mangalya','Autre'];
+
+// Initialisation factures dans le state
+if (!state.factures) state.factures = [];
+let editFacId = null;
+let mfPJData = null; // {nom, data(base64), type}
+
+function showPage_factures() {
+  renderFiltresFactures();
+  renderFactures();
+  renderKpisFactures();
+  renderAlertesFactures();
+}
+
+// ── KPIs ──
+function renderKpisFactures() {
+  const F = state.factures;
+  const now = new Date();
+  const recues    = F.filter(f=>f.statut==='recue').length;
+  const verif     = F.filter(f=>f.statut==='verifiee').length;
+  const enreg     = F.filter(f=>f.statut==='enregistree').length;
+  const payees    = F.filter(f=>f.statut==='payee').length;
+  const retard    = F.filter(f=>!['payee','cloturee'].includes(f.statut) && f.dateRecep && joursEcart(f.dateRecep,now)>30).length;
+  const enAttente = F.filter(f=>!['payee','cloturee'].includes(f.statut)).length;
+
+  document.getElementById('fac-k-recue').textContent   = recues;
+  document.getElementById('fac-k-verif').textContent   = verif;
+  document.getElementById('fac-k-enreg').textContent   = enreg;
+  document.getElementById('fac-k-payee').textContent   = payees;
+  document.getElementById('fac-k-retard').textContent  = retard;
+  document.getElementById('fac-k-retard').className    = 'metric-value ' + (retard>0?'danger':'ok');
+
+  // Badge sidebar
+  const badge = document.getElementById('nav-factures-badge');
+  if (badge) { badge.textContent=enAttente; badge.style.display=enAttente>0?'inline':'none'; }
+}
+
+// ── ALERTES ──
+function renderAlertesFactures() {
+  const now = new Date();
+  const retards = state.factures.filter(f=>
+    !['payee','cloturee'].includes(f.statut) && f.dateRecep && joursEcart(f.dateRecep,now)>30
+  );
+  const aDiv = document.getElementById('fac-alertes');
+  if (!retards.length) { aDiv.innerHTML=''; return; }
+  aDiv.innerHTML = `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i><div>
+    <strong>${retards.length} facture(s) en retard de paiement (&gt; 30 jours)</strong><br>
+    ${retards.map(f=>`<span style="font-size:12px">• ${f.fourn} — ${f.ref} — ${joursEcart(f.dateRecep,now)}j — statut : ${FAC_STATUTS[f.statut]?.lbl||f.statut}</span>`).join('<br>')}
+  </div></div>`;
+}
+
+// ── FILTRES ──
+function renderFiltresFactures() {
+  const fp = document.getElementById('fac-f-pole');
+  const fr = document.getElementById('fac-f-resp');
+  const curP=fp.value, curR=fr.value;
+  fp.innerHTML = '<option value="">Tous</option>' + state.poles.map(p=>`<option value="${p.id}" ${p.id===curP?'selected':''}>${p.nom}</option>`).join('');
+  const resps = [...new Set(state.factures.map(f=>f.resp).filter(Boolean))];
+  fr.innerHTML = '<option value="">ToutEs</option>' + resps.map(r=>`<option value="${r}" ${r===curR?'selected':''}>${r}</option>`).join('');
+}
+
+function resetFiltresFactures() {
+  document.getElementById('fac-f-statut').value='';
+  document.getElementById('fac-f-pole').value='';
+  document.getElementById('fac-f-resp').value='';
+  renderFactures();
+}
+
+// ── TABLE FACTURES ──
+function renderFactures() {
+  const fs = document.getElementById('fac-f-statut').value;
+  const fp = document.getElementById('fac-f-pole').value;
+  const fr = document.getElementById('fac-f-resp').value;
+  let facs = state.factures;
+  if (fs) facs = facs.filter(f=>f.statut===fs);
+  if (fp) facs = facs.filter(f=>f.pole===fp);
+  if (fr) facs = facs.filter(f=>f.resp===fr);
+  facs = [...facs].sort((a,b)=>(b.dateRecep||'').localeCompare(a.dateRecep||''));
+
+  const now = new Date();
+  let total=0;
+  const tbody = document.getElementById('fac-tbody');
+  if (!facs.length) {
+    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--text3)">Aucune facture pour ces critères</td></tr>';
+    document.getElementById('fac-total').textContent='0,00 €';
+    return;
+  }
+
+  tbody.innerHTML = facs.map(f=>{
+    total += f.montant||0;
+    const st = FAC_STATUTS[f.statut]||{lbl:f.statut,cls:'b-gray'};
+    const pole = state.poles.find(p=>p.id===f.pole);
+    const jours = f.dateRecep && !['payee','cloturee'].includes(f.statut) ? joursEcart(f.dateRecep,now) : null;
+    const retardBadge = jours!==null && jours>30 ? `<span class="badge b-red">${jours}j</span>` : (jours!==null ? `<span class="badge b-gray">${jours}j</span>` : '—');
+    const pjBtn = f.pj ? `<button class="btn btn-secondary btn-xs" onclick="voirPJ('${f.id}')" title="Voir la pièce jointe"><i class="ti ti-file-invoice"></i></button>` : '';
+    return `<tr>
+      <td><strong style="font-size:12px">${f.ref||'—'}</strong></td>
+      <td>${f.fourn||'—'}</td>
+      <td style="text-align:right;white-space:nowrap">${fmt(f.montant||0)}</td>
+      <td style="white-space:nowrap">${f.dateRecep||'—'}</td>
+      <td>${pole?`<span class="badge" style="background:${POLE_BG[pole.couleur]};color:${POLE_TEXT[pole.couleur]}">${pole.nom}</span>`:'—'}</td>
+      <td><span class="badge ${st.cls}">${st.lbl}</span></td>
+      <td style="font-size:12px">${f.resp||'—'}</td>
+      <td style="white-space:nowrap;font-size:12px">${f.datePaie||'—'}</td>
+      <td style="font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.libelleVirement||''}">${f.libelleVirement||'—'}</td>
+      <td>${retardBadge}</td>
+      <td style="white-space:nowrap">${pjBtn}<button class="btn btn-secondary btn-xs" style="margin-left:3px" onclick="ouvrirModalFacture('${f.id}')" title="Modifier"><i class="ti ti-edit"></i></button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('fac-total').textContent = fmt(total);
+  renderKpisFactures();
+  renderAlertesFactures();
+}
+
+// ── MODAL FACTURE ──
+function ouvrirModalFacture(id) {
+  editFacId = id || null;
+  mfPJData = null;
+  const f = id ? state.factures.find(x=>x.id===id) : null;
+  document.getElementById('modal-fac-title').textContent = f ? 'Modifier la facture' : 'Nouvelle facture';
+  document.getElementById('mf-btn-suppr').style.display = f ? 'inline-flex' : 'none';
+
+  document.getElementById('mf-ref').value       = f?.ref||'';
+  document.getElementById('mf-fourn').value      = f?.fourn||'';
+  document.getElementById('mf-montant').value    = f?.montant||'';
+  document.getElementById('mf-date-recep').value = f?.dateRecep||new Date().toISOString().slice(0,10);
+  document.getElementById('mf-date-echeance').value = f?.dateEcheance||'';
+  document.getElementById('mf-commande').value   = f?.commande||'';
+  document.getElementById('mf-statut').value     = f?.statut||'recue';
+  document.getElementById('mf-resp').value       = f?.resp||'';
+  document.getElementById('mf-date-paie').value  = f?.datePaie||'';
+  document.getElementById('mf-libelle-virement').value = f?.libelleVirement||'';
+  document.getElementById('mf-paye-par').value   = f?.payePar||'';
+  document.getElementById('mf-ref-compta').value = f?.refCompta||'';
+  document.getElementById('mf-notes').value      = f?.notes||'';
+
+  // Pôle
+  const poleEl = document.getElementById('mf-pole');
+  poleEl.innerHTML = '<option value="">—</option>' + state.poles.map(p=>`<option value="${p.id}" ${p.id===f?.pole?'selected':''}>${p.nom}</option>`).join('');
+  updateMfSP(f?.sousPrj);
+
+  // Catégorie
+  document.getElementById('mf-cat').innerHTML = '<option value="">—</option>' + state.categories.map(c=>`<option value="${c.id}" ${c.id===f?.cat?'selected':''}>${c.nom}</option>`).join('');
+
+  // PJ existante
+  if (f?.pj) {
+    mfPJData = f.pj;
+    document.getElementById('mf-pj-zone').style.display = 'none';
+    document.getElementById('mf-pj-preview').style.display = 'flex';
+    document.getElementById('mf-pj-nom').textContent = f.pj.nom;
+  } else {
+    document.getElementById('mf-pj-zone').style.display = 'block';
+    document.getElementById('mf-pj-preview').style.display = 'none';
+  }
+
+  togglePaiementFields();
+  document.getElementById('modal-facture').classList.add('open');
+}
+
+function fermerModalFacture() { document.getElementById('modal-facture').classList.remove('open'); editFacId=null; mfPJData=null; }
+
+function updateMfSP(curSP) {
+  const poleId = document.getElementById('mf-pole').value;
+  const pole = state.poles.find(p=>p.id===poleId);
+  const sel = document.getElementById('mf-sousprj');
+  sel.innerHTML = '<option value="">—</option>' + (pole?.sousProjets||[]).map(sp=>`<option value="${sp.id}" ${sp.id===curSP?'selected':''}>${sp.nom}</option>`).join('');
+  sel.disabled = !(pole?.sousProjets?.length);
+}
+
+function togglePaiementFields() {
+  const s = document.getElementById('mf-statut').value;
+  const show = ['payee','cloturee'].includes(s);
+  document.getElementById('mf-paiement-fields').style.display = show ? 'block' : 'none';
+}
+
+function chargerPJ(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) { toast('Fichier trop volumineux (max 5 Mo)', 'warn'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    mfPJData = { nom: file.name, data: e.target.result, type: file.type };
+    document.getElementById('mf-pj-zone').style.display = 'none';
+    document.getElementById('mf-pj-preview').style.display = 'flex';
+    document.getElementById('mf-pj-nom').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+
+function supprimerPJ() {
+  mfPJData = null;
+  document.getElementById('mf-pj-zone').style.display = 'block';
+  document.getElementById('mf-pj-preview').style.display = 'none';
+  document.getElementById('mf-pj-nom').textContent = '';
+}
+
+function voirPJ(id) {
+  const f = state.factures.find(x=>x.id===id);
+  if (!f?.pj?.data) return;
+  const w = window.open();
+  if (f.pj.type==='application/pdf') {
+    w.document.write(`<iframe src="${f.pj.data}" style="width:100%;height:100vh;border:none"></iframe>`);
+  } else {
+    w.document.write(`<img src="${f.pj.data}" style="max-width:100%">`);
+  }
+}
+
+function validerFacture() {
+  const ref      = document.getElementById('mf-ref').value.trim();
+  const fourn    = document.getElementById('mf-fourn').value.trim();
+  const montant  = parseFloat(document.getElementById('mf-montant').value)||0;
+  const statut   = document.getElementById('mf-statut').value;
+
+  if (!ref || !fourn || montant<=0) { toast('Référence, fournisseur et montant requis', 'warn'); return; }
+
+  // Règle d'or paiement
+  if (['payee','cloturee'].includes(statut)) {
+    const datePaie = document.getElementById('mf-date-paie').value;
+    const libVir   = document.getElementById('mf-libelle-virement').value.trim();
+    if (!datePaie || !libVir) {
+      toast('Date de paiement et libellé du virement obligatoires', 'warn');
+      document.getElementById('mf-date-paie').style.borderColor='var(--red)';
+      document.getElementById('mf-libelle-virement').style.borderColor='var(--red)';
+      return;
+    }
+    document.getElementById('mf-date-paie').style.borderColor='';
+    document.getElementById('mf-libelle-virement').style.borderColor='';
+  }
+
+  const fac = {
+    id:              editFacId || Date.now()+'_'+Math.random().toString(36).slice(2),
+    ref,
+    fourn,
+    montant,
+    dateRecep:       document.getElementById('mf-date-recep').value,
+    dateEcheance:    document.getElementById('mf-date-echeance').value,
+    commande:        document.getElementById('mf-commande').value.trim(),
+    statut,
+    resp:            document.getElementById('mf-resp').value,
+    datePaie:        document.getElementById('mf-date-paie').value,
+    libelleVirement: document.getElementById('mf-libelle-virement').value.trim(),
+    payePar:         document.getElementById('mf-paye-par').value,
+    refCompta:       document.getElementById('mf-ref-compta').value.trim(),
+    pole:            document.getElementById('mf-pole').value,
+    sousPrj:         document.getElementById('mf-sousprj').value,
+    cat:             document.getElementById('mf-cat').value,
+    notes:           document.getElementById('mf-notes').value.trim(),
+    pj:              mfPJData,
+    dateModif:       new Date().toISOString(),
+  };
+
+  if (editFacId) {
+    const idx = state.factures.findIndex(x=>x.id===editFacId);
+    if (idx>=0) state.factures[idx] = fac;
+  } else {
+    state.factures.push(fac);
+  }
+
+  fermerModalFacture();
+  sauvegarder(true);
+  renderFactures();
+  toast(editFacId ? 'Facture mise à jour' : 'Facture enregistrée');
+}
+
+function supprimerFacture() {
+  if (!confirm('Supprimer définitivement cette facture ?')) return;
+  state.factures = state.factures.filter(f=>f.id!==editFacId);
+  fermerModalFacture();
+  sauvegarder(true);
+  renderFactures();
+  toast('Facture supprimée');
+}
+
+// ── EXPORT FACTURES ──
+function exportFacturesCSV() {
+  if (!state.factures.length) { toast('Aucune facture à exporter','warn'); return; }
+  const BOM='\uFEFF',sep=';';
+  const h=['Référence','Fournisseur','Montant TTC','Date réception','Date échéance','Pôle','Catégorie','Statut','Responsable','Date paiement','Libellé virement','Payé par','Réf. MaCompta','Notes'].join(sep);
+  const rows=[...state.factures].sort((a,b)=>(b.dateRecep||'').localeCompare(a.dateRecep||'')).map(f=>{
+    const pole=state.poles.find(p=>p.id===f.pole);
+    const cat=state.categories.find(c=>c.id===f.cat);
+    return [f.ref||'','"'+(f.fourn||'')+'"',(f.montant||0).toFixed(2).replace('.',','),f.dateRecep||'',f.dateEcheance||'',pole?.nom||'',cat?.nom||'',FAC_STATUTS[f.statut]?.lbl||f.statut,f.resp||'',f.datePaie||'','"'+(f.libelleVirement||'')+'"',f.payePar||'',f.refCompta||'','"'+(f.notes||'')+'"'].join(sep);
+  }).join('\n');
+  dl(BOM+h+'\n'+rows,'Collin_factures_'+today()+'.csv','text/csv;charset=utf-8');
+  toast('Export factures téléchargé');
+}
+
+// ── HELPER DATE ──
+function joursEcart(dateStr, now) {
+  const d = new Date(dateStr);
+  return Math.floor((now-d)/(1000*60*60*24));
+}
+</script>
+</body>
+</html>
