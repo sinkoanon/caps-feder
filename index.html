@@ -954,27 +954,33 @@ function renderDashboard() {
   document.getElementById('db-nonetiq').textContent = nonEtiq;
   document.getElementById('db-nonetiq').className = 'metric-value ' + (nonEtiq > 0 ? 'danger' : 'ok');
 
-  // Barres par pôle — double barre dépenses + recettes
+  // Barres par pôle — dépenses directes + part fonctionnement ventilée
+  const vent = calcVentilation();
   const barres = document.getElementById('db-barres');
   barres.innerHTML = state.poles.map(p => {
-    const pDep = etiq.filter(o => o.pole === p.id && o.montant <= 0).reduce((s,o) => s + montantNet(o), 0);
-    const pRec = etiq.filter(o => o.pole === p.id && o.montant > 0).reduce((s,o) => s + o.montant, 0);
-    const pBudget = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
-    const pctDep = pBudget > 0 ? Math.min(100, Math.round(pDep / pBudget * 100)) : 0;
-    const pctRec = pBudget > 0 ? Math.min(100, Math.round(pRec / pBudget * 100)) : 0;
+    const pDep     = vent[p.id]?.directes  || 0;
+    const pVent    = vent[p.id]?.ventilees || 0;
+    const pTotal   = vent[p.id]?.total     || 0;
+    const pRec     = etiq.filter(o => o.pole === p.id && o.montant > 0).reduce((s,o) => s + o.montant, 0);
+    const pBudget  = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
+    const pctDep   = pBudget > 0 ? Math.min(100, Math.round(pDep   / pBudget * 100)) : 0;
+    const pctVent  = pBudget > 0 ? Math.min(100, Math.round(pTotal / pBudget * 100)) : 0;
+    const pctRec   = pBudget > 0 ? Math.min(100, Math.round(pRec   / pBudget * 100)) : 0;
+    const ventLabel = pVent > 0 ? `<span style="color:var(--text3);font-size:11px"> + ${fmtInt(pVent)} fonct.</span>` : '';
     return `<div class="prog-block">
       <div class="prog-meta">
         <span class="l">${p.nom}</span>
-        <span class="r" style="display:flex;gap:12px">
-          <span style="color:var(--teal)">↓ ${fmtInt(pRec)} reçus</span>
-          <span>↑ ${fmtInt(pDep)} / ${fmtInt(pBudget)}</span>
+        <span class="r" style="display:flex;gap:10px;flex-wrap:wrap">
+          ${pRec > 0 ? `<span style="color:var(--teal)">↓ ${fmtInt(pRec)}</span>` : ''}
+          <span>↑ ${fmtInt(pDep)}${pVent>0?' (+'+fmtInt(pVent)+' fonct.)':''} / ${fmtInt(pBudget)}</span>
         </span>
       </div>
-      <div class="bar-track" style="height:5px;margin-bottom:3px">
-        <div class="bar-fill" style="width:${pctRec}%;background:var(--teal)"></div>
-      </div>
+      ${pRec > 0 ? `<div class="bar-track" style="height:4px;margin-bottom:3px"><div class="bar-fill" style="width:${pctRec}%;background:var(--teal)"></div></div>` : ''}
       <div class="bar-track">
-        <div class="bar-fill" style="width:${pctDep}%;background:${POLE_COLORS[p.couleur]}"></div>
+        <div style="display:flex;height:100%">
+          <div style="width:${pctDep}%;background:${POLE_COLORS[p.couleur]};border-radius:4px 0 0 4px;transition:width .4s"></div>
+          <div style="width:${Math.max(0,pctVent-pctDep)}%;background:${POLE_COLORS[p.couleur]};opacity:.35;transition:width .4s"></div>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1006,9 +1012,11 @@ function renderPolePage(poleId) {
   const p = state.poles.find(x => x.id === poleId);
   if (!p) return;
   const etiq = state.operations.filter(o => o.pole === poleId);
-  const totalDep = etiq.reduce((s,o) => s + montantNet(o), 0);
+  const totalDep = etiq.filter(o => o.montant <= 0).reduce((s,o) => s + montantNet(o), 0);
+  const vent = calcVentilation();
+  const ventPole = vent[poleId] || { directes: 0, ventilees: 0, total: 0 };
   const pBudget = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
-  const taux = pBudget > 0 ? Math.round(totalDep / pBudget * 100) : 0;
+  const taux = pBudget > 0 ? Math.round(ventPole.total / pBudget * 100) : 0;
   const color = POLE_COLORS[p.couleur];
 
   let federSection = '';
@@ -1119,10 +1127,22 @@ function renderPolePage(poleId) {
   document.getElementById('pole-content').innerHTML = `
     <div class="page-header" style="display:flex;align-items:center;gap:12px">
       <span style="width:12px;height:12px;border-radius:50%;background:${color};display:inline-block"></span>
-      <div><h2>${p.nom}</h2><p>Budget : ${fmtInt(pBudget)} · Consommé : ${fmtInt(totalDep)} (${taux} %)</p></div>
+      <div><h2>${p.nom}</h2>
+        <p>Budget : ${fmtInt(pBudget)} · Dépenses directes : ${fmtInt(ventPole.directes)} · ${ventPole.ventilees > 0 ? `Part fonctionnement : <span style="color:var(--text3)">${fmtInt(ventPole.ventilees)}</span> · ` : ''}Total imputé : ${fmtInt(ventPole.total)} (${taux} %)</p>
+      </div>
       <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="ouvrirModalPole('${p.id}')"><i class="ti ti-edit"></i> Modifier</button>
     </div>
     ${federSection}
+    ${ventPole.ventilees > 0 ? `
+    <div class="card" style="margin-bottom:1.25rem;border-left:3px solid var(--blue);background:var(--blue-l)">
+      <div class="sec-title" style="margin-bottom:.75rem;color:var(--blue)"><i class="ti ti-share" style="color:var(--blue)"></i> Part des frais de fonctionnement imputée à ce pôle</div>
+      <div style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap;font-size:13px">
+        <div><span style="color:var(--text2)">Clé de répartition</span> <strong>${p.taux||0} %</strong></div>
+        <div><span style="color:var(--text2)">Dépenses FONC totales</span> <strong>${fmtInt(state.operations.filter(o=>o.pole&&state.poles.find(x=>x.id===o.pole)?.ventileAuto&&o.montant<=0).reduce((s,o)=>s+montantNet(o),0))}</strong></div>
+        <div><span style="color:var(--text2)">Part imputée ici</span> <strong style="color:var(--blue)">${fmtInt(ventPole.ventilees)}</strong></div>
+        <div style="font-size:11px;color:var(--text2)">Modifiable dans <strong>Config → ${p.nom} → Taux</strong></div>
+      </div>
+    </div>` : ''}
     ${finSection}
     ${spSection}
     <div class="sec-header"><div class="sec-title"><i class="ti ti-list"></i> Opérations <span class="badge b-gray" style="margin-left:4px">${etiq.length}</span></div></div>
@@ -1870,6 +1890,43 @@ function calcBudgetTotal() {
     const pBudget = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
     return s + pBudget;
   }, 0);
+}
+
+// ── VENTILATION FONCTIONNEMENT ────────────────────────────────
+// Calcule pour chaque pôle : dépenses directes + part du fonctionnement ventilée
+// Retourne un objet { poleId: { directes, ventilees, total } }
+function calcVentilation() {
+  const etiq = state.operations.filter(o => o.pole);
+
+  // Identifier les pôles "fonctionnement" (ventileAuto = true)
+  const polesVentile = state.poles.filter(p => p.ventileAuto);
+  const polesActifs  = state.poles.filter(p => !p.ventileAuto);
+
+  // Total clés des pôles actifs (pour normaliser à 100%)
+  const totalCles = polesActifs.reduce((s,p) => s + (p.taux||0), 0);
+
+  // Dépenses totales sur les pôles fonctionnement
+  const depFonc = polesVentile.reduce((s,pv) => {
+    return s + etiq.filter(o => o.pole === pv.id && o.montant <= 0).reduce((a,o) => a + montantNet(o), 0);
+  }, 0);
+
+  const result = {};
+  state.poles.forEach(p => {
+    const directes = etiq.filter(o => o.pole === p.id && o.montant <= 0).reduce((s,o) => s + montantNet(o), 0);
+    let ventilees = 0;
+    if (!p.ventileAuto && totalCles > 0) {
+      // Part de fonctionnement imputée à ce pôle
+      ventilees = depFonc * ((p.taux||0) / totalCles);
+    }
+    result[p.id] = { directes, ventilees, total: directes + ventilees };
+  });
+  // Pour FONC lui-même : on affiche les dépenses directes + la part résiduelle (taux FONC)
+  polesVentile.forEach(pv => {
+    const directes = etiq.filter(o => o.pole === pv.id && o.montant <= 0).reduce((s,o) => s + montantNet(o), 0);
+    const partResiduelle = totalCles > 0 ? depFonc * ((pv.taux||0) / (totalCles + (pv.taux||0))) : 0;
+    result[pv.id] = { directes, ventilees: 0, total: directes };
+  });
+  return result;
 }
 
 // ══════════════════════════════════════════════════════════════
