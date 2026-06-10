@@ -262,9 +262,9 @@ tbody tr:hover td{background:var(--bg2)}
 
   <div class="card-grid" id="db-kpis">
     <div class="metric"><div class="metric-label">Budget total</div><div class="metric-value" id="db-budget">—</div><div class="metric-sub">tous pôles</div></div>
+    <div class="metric"><div class="metric-label">Fonds reçus</div><div class="metric-value ok" id="db-recettes">0 €</div><div class="metric-sub" id="db-recettes-sub">encaissements étiquetés</div></div>
     <div class="metric"><div class="metric-label">Dépenses saisies</div><div class="metric-value warn" id="db-dep">0 €</div><div class="metric-sub" id="db-dep-sub">—</div></div>
     <div class="metric"><div class="metric-label">Taux global</div><div class="metric-value" id="db-taux">0 %</div><div class="metric-sub">consommation</div></div>
-    <div class="metric"><div class="metric-label">Opérations</div><div class="metric-value ok" id="db-ops">0</div><div class="metric-sub" id="db-ops-sub">dont 0 étiquetées</div></div>
     <div class="metric"><div class="metric-label">FEDER CAPs</div><div class="metric-value ok" id="db-feder">0 €</div><div class="metric-sub">mobilisé / 85 000 €</div></div>
     <div class="metric"><div class="metric-label">Non étiquetées</div><div class="metric-value danger" id="db-nonetiq">0</div><div class="metric-sub">à traiter</div></div>
   </div>
@@ -528,6 +528,14 @@ tbody tr:hover td{background:var(--bg2)}
         <button class="btn btn-secondary btn-xs" onclick="ajouterSousProjet()"><i class="ti ti-plus"></i> Ajouter</button>
       </div>
       <div id="sous-projets-list"></div>
+    </div>
+    <!-- Financeurs -->
+    <div style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Plan de financement</span>
+        <button class="btn btn-secondary btn-xs" onclick="ajouterFinanceur()"><i class="ti ti-plus"></i> Ajouter</button>
+      </div>
+      <div id="financeurs-list"></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
       <button class="btn btn-secondary" onclick="fermerModalPole()">Annuler</button>
@@ -805,11 +813,25 @@ const POLE_TEXT = {purple:'var(--purple-d)',teal:'var(--teal)',amber:'var(--ambe
 let state = {
   config: { code:'CAPs-FEDER', tauxFeder:48, feder:85000 },
   poles: [
-    { id:'CAPS', nom:'CAPs — FEDER', code:'CAPS', codeAnalytique:'CAPs-FEDER', taux:48, budget:304925, couleur:'purple', feder:true, sousProjets:[] },
-    { id:'FORM', nom:'Formation professionnelle', code:'FORM', codeAnalytique:'FORM-2026', taux:35, budget:151661, couleur:'teal', feder:false, sousProjets:[] },
+    { id:'CAPS', nom:'CAPs — FEDER', code:'CAPS', codeAnalytique:'CAPs-FEDER', taux:48, budget:304925, couleur:'purple', feder:true, sousProjets:[],
+      financeurs:[
+        { id:'feder',    nom:'FEDER — Région Occitanie', prevu:85000 },
+        { id:'afnic',    nom:'AFNIC',                    prevu:41667 },
+        { id:'autofinancement', nom:'Autofinancement',   prevu:178258 }
+      ]},
+    { id:'FORM', nom:'Formation professionnelle', code:'FORM', codeAnalytique:'FORM-2026', taux:35, budget:151661, couleur:'teal', feder:false, sousProjets:[],
+      financeurs:[
+        { id:'autofinancement', nom:'Autofinancement', prevu:151661 }
+      ]},
     { id:'SERV', nom:'Services & accompagnement', code:'SERV', codeAnalytique:'SERV-2026', taux:12, budget:80000, couleur:'amber', feder:false,
-      sousProjets:[{ id:'CINM', nom:'CINM', budget:4100, financeurs:'PREF 2 000 € + TM 2 100 €' }] },
-    { id:'FONC', nom:'Fonctionnement général', code:'FONC', codeAnalytique:'FONC-2026', taux:5, budget:0, couleur:'blue', feder:false, sousProjets:[], ventileAuto:true }
+      sousProjets:[{ id:'CINM', nom:'CINM', budget:4100, financeurs:'PREF 2 000 € + TM 2 100 €' }],
+      financeurs:[
+        { id:'prefecture',  nom:'Préfecture de Toulouse', prevu:2000 },
+        { id:'tm',          nom:'Toulouse Métropole',     prevu:2100 },
+        { id:'autofinancement', nom:'Autofinancement',    prevu:75900 }
+      ]},
+    { id:'FONC', nom:'Fonctionnement général', code:'FONC', codeAnalytique:'FONC-2026', taux:5, budget:0, couleur:'blue', feder:false, sousProjets:[], ventileAuto:true,
+      financeurs:[] }
   ],
   categories: [
     { id:'personnel', nom:'Personnel (salaires + charges)', codes:'641,645', feder:true },
@@ -910,34 +932,50 @@ function renderDashboard() {
   const totalBudget = calcBudgetTotal();
   const ops = state.operations;
   const etiq = ops.filter(o => o.pole);
-  const totalDep = etiq.reduce((s,o) => s + montantNet(o), 0);
+  // Dépenses = opérations négatives (débits)
+  const totalDep = etiq.filter(o => o.montant <= 0).reduce((s,o) => s + montantNet(o), 0);
+  // Recettes = opérations positives (crédits) étiquetées
+  const totalRec = etiq.filter(o => o.montant > 0).reduce((s,o) => s + o.montant, 0);
   const taux = totalBudget > 0 ? Math.round(totalDep / totalBudget * 100) : 0;
   const nonEtiq = ops.filter(o => !o.pole).length;
 
   // FEDER
-  const capsDep = etiq.filter(o => o.pole === 'CAPS' && isFederEligible(o.cat));
+  const capsDep = etiq.filter(o => o.pole === 'CAPS' && isFederEligible(o.cat) && o.montant <= 0);
   const federMob = capsDep.reduce((s,o) => s + montantNet(o), 0) * (state.config.tauxFeder/100);
 
   document.getElementById('db-budget').textContent = fmtInt(totalBudget);
+  document.getElementById('db-recettes').textContent = fmtInt(totalRec);
+  document.getElementById('db-recettes-sub').textContent = etiq.filter(o=>o.montant>0).length + ' encaissement(s)';
   document.getElementById('db-dep').textContent = fmtInt(totalDep);
   document.getElementById('db-dep-sub').textContent = 'sur ' + fmtInt(totalBudget) + ' prévu';
   document.getElementById('db-taux').textContent = taux + ' %';
   document.getElementById('db-taux').className = 'metric-value ' + (taux < 20 ? 'warn' : 'ok');
-  document.getElementById('db-ops').textContent = ops.length;
-  document.getElementById('db-ops-sub').textContent = 'dont ' + etiq.length + ' étiquetées';
   document.getElementById('db-feder').textContent = fmtInt(federMob);
   document.getElementById('db-nonetiq').textContent = nonEtiq;
   document.getElementById('db-nonetiq').className = 'metric-value ' + (nonEtiq > 0 ? 'danger' : 'ok');
 
-  // Barres par pôle
+  // Barres par pôle — double barre dépenses + recettes
   const barres = document.getElementById('db-barres');
   barres.innerHTML = state.poles.map(p => {
-    const pDep = etiq.filter(o => o.pole === p.id).reduce((s,o) => s + montantNet(o), 0);
+    const pDep = etiq.filter(o => o.pole === p.id && o.montant <= 0).reduce((s,o) => s + montantNet(o), 0);
+    const pRec = etiq.filter(o => o.pole === p.id && o.montant > 0).reduce((s,o) => s + o.montant, 0);
     const pBudget = (p.budget||0) + (p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
-    const pct = pBudget > 0 ? Math.min(100, Math.round(pDep / pBudget * 100)) : 0;
+    const pctDep = pBudget > 0 ? Math.min(100, Math.round(pDep / pBudget * 100)) : 0;
+    const pctRec = pBudget > 0 ? Math.min(100, Math.round(pRec / pBudget * 100)) : 0;
     return `<div class="prog-block">
-      <div class="prog-meta"><span class="l">${p.nom}</span><span class="r">${fmtInt(pDep)} / ${fmtInt(pBudget)}</span></div>
-      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${POLE_COLORS[p.couleur]}"></div></div>
+      <div class="prog-meta">
+        <span class="l">${p.nom}</span>
+        <span class="r" style="display:flex;gap:12px">
+          <span style="color:var(--teal)">↓ ${fmtInt(pRec)} reçus</span>
+          <span>↑ ${fmtInt(pDep)} / ${fmtInt(pBudget)}</span>
+        </span>
+      </div>
+      <div class="bar-track" style="height:5px;margin-bottom:3px">
+        <div class="bar-fill" style="width:${pctRec}%;background:var(--teal)"></div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pctDep}%;background:${POLE_COLORS[p.couleur]}"></div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1040,6 +1078,44 @@ function renderPolePage(poleId) {
     </tr>`;
   }).join('') : '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">Aucune opération étiquetée sur ce pôle</td></tr>';
 
+  // Plan de financement
+  const finSection = (p.financeurs && p.financeurs.length) ? (() => {
+    const pRec = etiq.filter(o => o.montant > 0);
+    const totalPrevu = p.financeurs.reduce((s,f) => s + (f.prevu||0), 0);
+    const totalRecu = pRec.reduce((s,o) => s + o.montant, 0);
+    const rows = p.financeurs.map(f => {
+      // Recettes reçues pour ce financeur = opérations dont le libellé contient le nom du financeur
+      const recu = pRec.filter(o => o.financeurId === f.id).reduce((s,o) => s + o.montant, 0);
+      const ecart = recu - (f.prevu||0);
+      const pct = f.prevu > 0 ? Math.min(100, Math.round(recu / f.prevu * 100)) : 0;
+      return `<tr>
+        <td>${f.nom}</td>
+        <td style="text-align:right">${fmtInt(f.prevu)}</td>
+        <td style="text-align:right;color:var(--teal)">${fmtInt(recu)}</td>
+        <td style="text-align:right">
+          <div class="bar-track" style="width:80px;display:inline-block;vertical-align:middle;margin-right:6px">
+            <div class="bar-fill" style="width:${pct}%;background:var(--teal)"></div>
+          </div>
+          <span class="${ecart >= 0 ? 'ok' : 'warn'}">${ecart >= 0 ? '+' : ''}${fmtInt(ecart)}</span>
+        </td>
+      </tr>`;
+    }).join('');
+    return `
+      <div class="card" style="margin-bottom:1.25rem">
+        <div class="sec-title" style="margin-bottom:.875rem"><i class="ti ti-cash"></i> Plan de financement</div>
+        <div class="tw"><table>
+          <thead><tr><th>Financeur</th><th style="text-align:right">Prévu</th><th style="text-align:right">Reçu</th><th style="text-align:right">Écart</th></tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot><tr class="tf">
+            <td>Total</td>
+            <td style="text-align:right">${fmtInt(totalPrevu)}</td>
+            <td style="text-align:right;color:var(--teal)">${fmtInt(totalRecu)}</td>
+            <td style="text-align:right"><span class="${totalRecu >= totalPrevu ? 'ok' : 'warn'}">${totalRecu >= totalPrevu ? '+' : ''}${fmtInt(totalRecu - totalPrevu)}</span></td>
+          </tr></tfoot>
+        </table></div>
+      </div>`;
+  })() : '';
+
   document.getElementById('pole-content').innerHTML = `
     <div class="page-header" style="display:flex;align-items:center;gap:12px">
       <span style="width:12px;height:12px;border-radius:50%;background:${color};display:inline-block"></span>
@@ -1047,6 +1123,7 @@ function renderPolePage(poleId) {
       <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="ouvrirModalPole('${p.id}')"><i class="ti ti-edit"></i> Modifier</button>
     </div>
     ${federSection}
+    ${finSection}
     ${spSection}
     <div class="sec-header"><div class="sec-title"><i class="ti ti-list"></i> Opérations <span class="badge b-gray" style="margin-left:4px">${etiq.length}</span></div></div>
     <div class="card" style="padding:0">
@@ -1079,68 +1156,47 @@ function importCSV(input) {
   const file = input.files[0];
   if (!file) return;
 
-  const doParse = (text) => {
+  const parse = (text) => {
     const lines = text.split('\n').filter(l => l.trim());
     const sep = lines[0].includes(';') ? ';' : ',';
 
-    // Trouver la ligne d'en-tête — chercher "date" dans n'importe quel encodage
+    // Trouver la ligne d'en-tête — chercher "date" + "lib" en ignorant les accents
     let headerLine = -1;
     for (let i = 0; i < Math.min(10, lines.length); i++) {
-      // Normaliser : enlever accents, mettre en minuscules
-      const norm = lines[i].toLowerCase()
-        .replace(/[\u00e9\u00e8\u00ea\u00eb]/g,'e')
-        .replace(/[\u00e0\u00e2\u00e4]/g,'a')
-        .replace(/[\u00ee\u00ef]/g,'i')
-        .replace(/[\u00f4\u00f6]/g,'o')
-        .replace(/[\u00fb\u00fc]/g,'u')
-        // latin-1 mal décodé
-        .replace(/\ufffde9/g,'e').replace(/\xe9/g,'e')
-        .replace(/\xe8/g,'e').replace(/\xe0/g,'a')
-        .replace(/\xea/g,'e').replace(/\xeb/g,'e');
-      if (norm.includes('date') && (norm.includes('lib') || norm.includes('bell'))) {
+      const l = lines[i].replace(/[^\x00-\x7F]/g, 'X').toLowerCase();
+      if (l.includes('date') && (l.includes('lib') || l.includes('xb'))) {
         headerLine = i; break;
       }
     }
     if (headerLine < 0) return null;
 
-    // Lire les colonnes de l'en-tête
-    const rawHeaders = parseCSVLine(lines[headerLine], sep);
-    const headers = rawHeaders.map(h => h.toLowerCase()
-      .replace(/[^\x00-\x7F]/g, '_') // remplacer tout caractère non-ASCII par _
-      .trim()
-    );
-
-    // Trouver les indices par position connue si la détection échoue
-    // Format Crédit Mutuel : Date(0), Valeur(1), Libellé(2), Débit(3), Crédit(4), Solde(5)
+    // Positions par défaut format Crédit Mutuel : Date(0), Valeur(1), Libellé(2), Débit(3), Crédit(4)
     let colDate = 0, colLib = 2, colDebit = 3, colCredit = 4;
-    headers.forEach((h, i) => {
-      if (h === 'date')                          colDate   = i;
-      if (h.includes('lib') || h.includes('_b')) colLib    = i;
-      if (h.includes('d_b') || h.includes('deb') || h === 'd_bit') colDebit = i;
-      if (h.includes('cr_d') || h.includes('cred') || h === 'cr_dit') colCredit = i;
+
+    // Affiner si possible
+    const hdrs = parseCSVLine(lines[headerLine], sep).map(h =>
+      h.replace(/[^\x00-\x7F]/g,'x').toLowerCase().trim()
+    );
+    hdrs.forEach((h, i) => {
+      if (h === 'date')             colDate   = i;
+      if (h.includes('lib'))        colLib    = i;
+      if (h.includes('dx') || h.includes('db') || h === 'dxbit') colDebit = i;
+      if (h.includes('cx') || h.includes('cr'))                   colCredit = i;
     });
 
     const parsed = [];
     for (let i = headerLine + 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i], sep);
-      if (!cols[colDate]) continue;
-      const dateRaw = cols[colDate].trim();
+      const dateRaw = (cols[colDate] || '').trim();
       if (!dateRaw.match(/^\d{2}\/\d{2}\/\d{4}$/)) continue;
       const dateISO = dateRaw.split('/').reverse().join('-');
       const libelle = (cols[colLib] || '').trim();
       if (!libelle) continue;
 
-      const nettoyer = s => parseFloat(
-        (s||'').replace(/"/g,'').replace(/\s/g,'').replace(',','.').trim()
-      ) || 0;
-
-      const debitRaw  = nettoyer(cols[colDebit]  || '');
-      const creditRaw = nettoyer(cols[colCredit] || '');
-
-      let montant = 0;
-      if      (debitRaw < 0)  montant = debitRaw;
-      else if (debitRaw > 0)  montant = -debitRaw;
-      else if (creditRaw > 0) montant = creditRaw;
+      const net = s => parseFloat((s||'').replace(/"/g,'').replace(/\s/g,'').replace(',','.')) || 0;
+      const d = net(cols[colDebit] || '');
+      const c = net(cols[colCredit] || '');
+      const montant = d < 0 ? d : d > 0 ? -d : c > 0 ? c : 0;
 
       parsed.push({
         id: Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2,5),
@@ -1152,10 +1208,9 @@ function importCSV(input) {
     return parsed.length ? { parsed, sep, headerLine } : null;
   };
 
-  const showResult = (result, filename) => {
+  const afficher = (result) => {
     if (!result) {
-      document.getElementById('import-preview').innerHTML =
-        `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i>Aucune opération détectée. Vérifiez le format (colonnes Date, Libellé, Débit attendues).</div>`;
+      document.getElementById('import-preview').innerHTML = `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i>Aucune opération détectée. Vérifiez le format du fichier.</div>`;
       document.getElementById('import-actions').style.display = 'none';
       return;
     }
@@ -1165,14 +1220,14 @@ function importCSV(input) {
     const debits  = parsed.filter(o => o.montant < 0).length;
     document.getElementById('import-preview').innerHTML = `
       <div class="ib ib-green"><i class="ti ti-check"></i>
-        <span><strong>${filename}</strong> — <strong>${parsed.length}</strong> opération(s) · ${debits} débit(s) · ${credits} crédit(s) · séparateur «${sep}» · en-tête L${headerLine+1}</span>
+        <span><strong>${file.name}</strong> — <strong>${parsed.length}</strong> opération(s) · ${debits} débit(s) · ${credits} crédit(s) · séparateur «${sep}» · en-tête L${headerLine+1}</span>
       </div>
       <div class="card" style="padding:0"><div class="tw"><table>
         <thead><tr><th>Date</th><th>Libellé</th><th style="text-align:right">Montant</th></tr></thead>
         <tbody>${parsed.slice(0,10).map(o=>`<tr>
           <td style="white-space:nowrap">${o.date}</td>
           <td>${o.libelle}</td>
-          <td style="text-align:right;color:${o.montant<0?'var(--red)':'var(--teal)'}">${fmt(montantNet(o))}</td>
+          <td style="text-align:right;${o.montant<0?'color:var(--red)':'color:var(--teal)'}">${fmt(montantNet(o))}</td>
         </tr>`).join('')}
         ${parsed.length>10?`<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:.5rem">… ${parsed.length-10} autres</td></tr>`:''}
         </tbody></table></div></div>`;
@@ -1180,13 +1235,13 @@ function importCSV(input) {
     document.getElementById('import-actions').style.display = 'flex';
   };
 
-  // Lire en latin-1 d'abord (Crédit Mutuel), puis UTF-8
+  // Latin-1 en premier (Crédit Mutuel), UTF-8 en fallback
   const r1 = new FileReader();
   r1.onload = e => {
-    const res = doParse(e.target.result);
-    if (res) { showResult(res, file.name); return; }
+    const res = parse(e.target.result);
+    if (res) { afficher(res); return; }
     const r2 = new FileReader();
-    r2.onload = e2 => showResult(doParse(e2.target.result), file.name);
+    r2.onload = e2 => afficher(parse(e2.target.result));
     r2.readAsText(file, 'utf-8');
   };
   r1.readAsText(file, 'latin-1');
@@ -1250,19 +1305,29 @@ function renderEtiquetage() {
 
   document.getElementById('etiq-list').innerHTML = ops.map(o => {
     const pole = state.poles.find(p => p.id === o.pole);
-    const spOpts = pole && pole.sousProjets.length
+    const spOpts = pole && pole.sousProjets && pole.sousProjets.length
       ? '<option value="">—</option>' + pole.sousProjets.map(sp => `<option value="${sp.id}" ${o.sousPrj===sp.id?'selected':''}>${sp.nom}</option>`).join('')
       : '<option value="">—</option>';
+    const finOpts = pole && pole.financeurs && pole.financeurs.length
+      ? '<option value="">— Financeur</option>' + pole.financeurs.map(f => `<option value="${f.id}" ${o.financeurId===f.id?'selected':''}>${f.nom}</option>`).join('')
+      : '<option value="">—</option>';
+    const isCredit = o.montant > 0;
+    const montantStyle = isCredit ? 'color:var(--teal);font-weight:600' : 'font-weight:500';
     return `<div class="etiq-row" id="erow-${o.id}">
       <span style="color:var(--text2)">${o.date}</span>
       <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.libelle}">${o.libelle}</span>
-      <span style="text-align:right;font-weight:500">${fmt(montantNet(o))}</span>
+      <span style="text-align:right;${montantStyle}">${isCredit?'+':''}${fmt(montantNet(o))}</span>
       <select onchange="setEtiqPole('${o.id}',this.value)">${poleOpts.replace(`value="${o.pole||''}"`,`value="${o.pole||''}" selected`)}</select>
-      <select id="sp-${o.id}" onchange="setEtiqSP('${o.id}',this.value)">${spOpts}</select>
+      <select id="sp-${o.id}" onchange="${isCredit ? `setEtiqFinanceur('${o.id}',this.value)` : `setEtiqSP('${o.id}',this.value)`}">${isCredit ? finOpts : spOpts}</select>
       <select onchange="setEtiqCat('${o.id}',this.value)">${catOpts.replace(`value="${o.cat||''}"`,`value="${o.cat||''}" selected`)}</select>
       <button class="btn btn-secondary btn-xs" onclick="ouvrirVentilation('${o.id}')" title="Ventilation manuelle"><i class="ti ti-percentage"></i></button>
     </div>`;
   }).join('');
+}
+
+function setEtiqFinanceur(id, val) {
+  const op = state.operations.find(o => o.id === id);
+  if (op) { op.financeurId = val || null; }
 }
 
 function setEtiqPole(id, val) {
@@ -1334,7 +1399,7 @@ function ouvrirVentilation(opId) {
   ventOpId = opId;
   const op = state.operations.find(o => o.id === opId);
   if (!op) return;
-  document.getElementById('vent-info').innerHTML = `<strong>${op.libelle}</strong> · ${fmt(montantNet(op))}`;
+  document.getElementById('vent-info').innerHTML = `<strong>${op.libelle}</strong> · ${fmt(op.montant)}`;
   const vent = op.ventilation || state.poles.filter(p=>!p.ventileAuto).reduce((acc,p)=>({...acc,[p.id]:p.id===op.pole?100:0}),{});
   const rows = document.getElementById('vent-rows');
   rows.innerHTML = state.poles.filter(p=>!p.ventileAuto).map(p => `
@@ -1561,10 +1626,31 @@ function ouvrirModalPole(id) {
   document.getElementById('mp-couleur').value = p?.couleur || 'teal';
   document.getElementById('mp-feder').value = p?.feder ? 'oui' : 'non';
   renderSousProjetsModal(p?.sousProjets || []);
+  renderFinanceursModal(p?.financeurs || []);
   document.getElementById('modal-pole').classList.add('open');
 }
 
 function fermerModalPole() { document.getElementById('modal-pole').classList.remove('open'); editPoleId = null; }
+
+function renderFinanceursModal(fins) {
+  document.getElementById('financeurs-list').innerHTML = fins.map((f,i) => `
+    <div style="display:grid;grid-template-columns:1fr 120px 28px;gap:6px;margin-bottom:6px;align-items:end">
+      <div class="fgroup"><label>Financeur</label><input type="text" id="fnom-${i}" value="${f.nom||''}" placeholder="Ex : FEDER, AFNIC…"></div>
+      <div class="fgroup"><label>Montant prévu (€)</label><input type="number" id="fprevu-${i}" value="${f.prevu||0}" step="100"></div>
+      <button class="btn btn-danger btn-xs" style="align-self:flex-end" onclick="this.parentElement.remove()"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+}
+
+function ajouterFinanceur() {
+  const n = document.getElementById('financeurs-list').children.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 120px 28px;gap:6px;margin-bottom:6px;align-items:end';
+  div.innerHTML = `
+    <div class="fgroup"><label>Financeur</label><input type="text" id="fnom-${n}" placeholder="Ex : FEDER, AFNIC…"></div>
+    <div class="fgroup"><label>Montant prévu (€)</label><input type="number" id="fprevu-${n}" value="0" step="100"></div>
+    <button class="btn btn-danger btn-xs" style="align-self:flex-end" onclick="this.parentElement.remove()"><i class="ti ti-x"></i></button>`;
+  document.getElementById('financeurs-list').appendChild(div);
+}
 
 function renderSousProjetsModal(sps) {
   document.getElementById('sous-projets-list').innerHTML = sps.map((sp,i) => `
@@ -1604,11 +1690,18 @@ function sauvegarderPole() {
     const n = document.getElementById('spnom-'+i)?.value.trim();
     if (n) sps.push({ id: code+'_'+n.toUpperCase().replace(/\s+/g,'_'), nom: n, budget: parseFloat(document.getElementById('spbud-'+i)?.value)||0, financeurs: document.getElementById('spfin-'+i)?.value.trim()||'' });
   }
+  // Lire financeurs
+  const finList = document.getElementById('financeurs-list');
+  const fins = [];
+  for (let i = 0; i < finList.children.length; i++) {
+    const n = document.getElementById('fnom-'+i)?.value.trim();
+    if (n) fins.push({ id: n.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,''), nom: n, prevu: parseFloat(document.getElementById('fprevu-'+i)?.value)||0 });
+  }
   if (editPoleId) {
     const p = state.poles.find(x=>x.id===editPoleId);
-    if (p) { p.nom=nom; p.code=code; p.codeAnalytique=document.getElementById('mp-code-analytique').value.trim(); p.taux=parseFloat(document.getElementById('mp-taux').value)||0; p.budget=parseFloat(document.getElementById('mp-budget').value)||0; p.couleur=document.getElementById('mp-couleur').value; p.feder=document.getElementById('mp-feder').value==='oui'; p.sousProjets=sps; }
+    if (p) { p.nom=nom; p.code=code; p.codeAnalytique=document.getElementById('mp-code-analytique').value.trim(); p.taux=parseFloat(document.getElementById('mp-taux').value)||0; p.budget=parseFloat(document.getElementById('mp-budget').value)||0; p.couleur=document.getElementById('mp-couleur').value; p.feder=document.getElementById('mp-feder').value==='oui'; p.sousProjets=sps; p.financeurs=fins; }
   } else {
-    state.poles.push({ id:code, nom, code, codeAnalytique:document.getElementById('mp-code-analytique').value.trim(), taux:parseFloat(document.getElementById('mp-taux').value)||0, budget:parseFloat(document.getElementById('mp-budget').value)||0, couleur:document.getElementById('mp-couleur').value, feder:document.getElementById('mp-feder').value==='oui', sousProjets:sps });
+    state.poles.push({ id:code, nom, code, codeAnalytique:document.getElementById('mp-code-analytique').value.trim(), taux:parseFloat(document.getElementById('mp-taux').value)||0, budget:parseFloat(document.getElementById('mp-budget').value)||0, couleur:document.getElementById('mp-couleur').value, feder:document.getElementById('mp-feder').value==='oui', sousProjets:sps, financeurs:fins });
   }
   fermerModalPole();
   sauvegarder(true);
@@ -2133,135 +2226,4 @@ function ouvrirModalFacture(id) {
     document.getElementById('mf-pj-preview').style.display = 'flex';
     document.getElementById('mf-pj-nom').textContent = f.pj.nom;
   } else {
-    document.getElementById('mf-pj-zone').style.display = 'block';
-    document.getElementById('mf-pj-preview').style.display = 'none';
-  }
-
-  togglePaiementFields();
-  document.getElementById('modal-facture').classList.add('open');
-}
-
-function fermerModalFacture() { document.getElementById('modal-facture').classList.remove('open'); editFacId=null; mfPJData=null; }
-
-function updateMfSP(curSP) {
-  const poleId = document.getElementById('mf-pole').value;
-  const pole = state.poles.find(p=>p.id===poleId);
-  const sel = document.getElementById('mf-sousprj');
-  sel.innerHTML = '<option value="">—</option>' + (pole?.sousProjets||[]).map(sp=>`<option value="${sp.id}" ${sp.id===curSP?'selected':''}>${sp.nom}</option>`).join('');
-  sel.disabled = !(pole?.sousProjets?.length);
-}
-
-function togglePaiementFields() {
-  const s = document.getElementById('mf-statut').value;
-  const show = ['payee','cloturee'].includes(s);
-  document.getElementById('mf-paiement-fields').style.display = show ? 'block' : 'none';
-}
-
-function chargerPJ(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 5*1024*1024) { toast('Fichier trop volumineux (max 5 Mo)', 'warn'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    mfPJData = { nom: file.name, data: e.target.result, type: file.type };
-    document.getElementById('mf-pj-zone').style.display = 'none';
-    document.getElementById('mf-pj-preview').style.display = 'flex';
-    document.getElementById('mf-pj-nom').textContent = file.name;
-  };
-  reader.readAsDataURL(file);
-  input.value='';
-}
-
-function supprimerPJ() {
-  mfPJData = null;
-  document.getElementById('mf-pj-zone').style.display = 'block';
-  document.getElementById('mf-pj-preview').style.display = 'none';
-  document.getElementById('mf-pj-nom').textContent = '';
-}
-
-function voirPJ(id) {
-  const f = state.factures.find(x=>x.id===id);
-  if (!f?.pj?.data) return;
-  const w = window.open();
-  if (f.pj.type==='application/pdf') {
-    w.document.write(`<iframe src="${f.pj.data}" style="width:100%;height:100vh;border:none"></iframe>`);
-  } else {
-    w.document.write(`<img src="${f.pj.data}" style="max-width:100%">`);
-  }
-}
-
-function validerFacture() {
-  const ref      = document.getElementById('mf-ref').value.trim();
-  const fourn    = document.getElementById('mf-fourn').value.trim();
-  const montant  = parseFloat(document.getElementById('mf-montant').value)||0;
-  const statut   = document.getElementById('mf-statut').value;
-
-  if (!ref || !fourn || montant<=0) { toast('Référence, fournisseur et montant requis', 'warn'); return; }
-
-  // Règle d'or paiement
-  if (['payee','cloturee'].includes(statut)) {
-    const datePaie = document.getElementById('mf-date-paie').value;
-    const libVir   = document.getElementById('mf-libelle-virement').value.trim();
-    if (!datePaie || !libVir) {
-      toast('Date de paiement et libellé du virement obligatoires', 'warn');
-      document.getElementById('mf-date-paie').style.borderColor='var(--red)';
-      document.getElementById('mf-libelle-virement').style.borderColor='var(--red)';
-      return;
-    }
-    document.getElementById('mf-date-paie').style.borderColor='';
-    document.getElementById('mf-libelle-virement').style.borderColor='';
-  }
-
-  const fac = {
-    id:              editFacId || Date.now()+'_'+Math.random().toString(36).slice(2),
-    ref,
-    fourn,
-    montant,
-    dateRecep:       document.getElementById('mf-date-recep').value,
-    dateEcheance:    document.getElementById('mf-date-echeance').value,
-    commande:        document.getElementById('mf-commande').value.trim(),
-    statut,
-    resp:            document.getElementById('mf-resp').value,
-    datePaie:        document.getElementById('mf-date-paie').value,
-    libelleVirement: document.getElementById('mf-libelle-virement').value.trim(),
-    payePar:         document.getElementById('mf-paye-par').value,
-    refCompta:       document.getElementById('mf-ref-compta').value.trim(),
-    pole:            document.getElementById('mf-pole').value,
-    sousPrj:         document.getElementById('mf-sousprj').value,
-    cat:             document.getElementById('mf-cat').value,
-    notes:           document.getElementById('mf-notes').value.trim(),
-    pj:              mfPJData,
-    dateModif:       new Date().toISOString(),
-  };
-
-  if (editFacId) {
-    const idx = state.factures.findIndex(x=>x.id===editFacId);
-    if (idx>=0) state.factures[idx] = fac;
-  } else {
-    state.factures.push(fac);
-  }
-
-  fermerModalFacture();
-  sauvegarder(true);
-  renderFactures();
-  toast(editFacId ? 'Facture mise à jour' : 'Facture enregistrée');
-}
-
-function supprimerFacture() {
-  if (!confirm('Supprimer définitivement cette facture ?')) return;
-  state.factures = state.factures.filter(f=>f.id!==editFacId);
-  fermerModalFacture();
-  sauvegarder(true);
-  renderFactures();
-  toast('Facture supprimée');
-}
-
-// ── EXPORT FACTURES ──
-function exportFacturesCSV() {
-  if (!state.factures.length) { toast('Aucune facture à exporter','warn'); return; }
-  const BOM='\uFEFF',sep=';';
-  const h=['Référence','Fournisseur','Montant TTC','Date réception','Date échéance','Pôle','Catégorie','Statut','Responsable','Date paiement','Libellé virement','Payé par','Réf. MaCompta','Notes'].join(sep);
-  const rows=[...state.factures].sort((a,b)=>(b.dateRecep||'').localeCompare(a.dateRecep||'')).map(f=>{
-    const pole=state.poles.find(p=>p.id===f.pole);
-    const cat=state.categories.find(c=>c.id===f.cat);
-    return [f.ref||'','"'+(f.fourn||'')+'"',(f.montant||0).toFixed(2).replace('.',','),f.dateRecep||'',f.dateEcheance||'',pole?.nom||'',cat?.nom||'',FAC_STATUTS[f.statut]?.lbl||f.statut,f.resp||'',f.datePaie||'','"'+(f.libelleVirement||'')+'"',f.payePar||'',f.refCompta||'','"'+(
+    
