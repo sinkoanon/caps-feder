@@ -219,6 +219,7 @@ tbody tr:hover td{background:var(--bg2)}
   <div class="nav-section">
     <div class="nav-label">Vue globale</div>
     <button class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')"><i class="ti ti-layout-dashboard"></i> Tableau de bord</button>
+    <button class="nav-item" id="nav-tresorerie" onclick="showPage('tresorerie')"><i class="ti ti-cash"></i> Trésorerie</button>
     <button class="nav-item" id="nav-import" onclick="showPage('import')"><i class="ti ti-upload"></i> Import relevés</button>
     <button class="nav-item" id="nav-etiquetage" onclick="showPage('etiquetage')"><i class="ti ti-tags"></i> Étiquetage</button>
     <button class="nav-item" id="nav-journal" onclick="showPage('journal')"><i class="ti ti-file-spreadsheet"></i> Journal global</button>
@@ -292,6 +293,113 @@ tbody tr:hover td{background:var(--bg2)}
       <div class="sec-title"><i class="ti ti-trending-up"></i> Évolution mensuelle cumulée</div>
     </div>
     <div class="chart-wrap" style="height:180px"><canvas id="chart-evol" role="img" aria-label="Évolution mensuelle cumulée">Aucune donnée.</canvas></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     TRÉSORERIE
+═══════════════════════════════════════ -->
+<div id="page-tresorerie" class="page">
+  <div class="page-header">
+    <h2>Tableau de trésorerie</h2>
+    <p>Solde réel · Engagements en attente · Subventions à recevoir</p>
+  </div>
+
+  <!-- Saisie solde bancaire -->
+  <div class="cfg-banner" style="margin-bottom:1.25rem">
+    <div class="cfg-field">
+      <label><i class="ti ti-building-bank" style="font-size:12px"></i> Solde bancaire réel au</label>
+      <input type="date" id="treso-date-solde" style="width:140px;font-family:inherit" oninput="updateTresorerie()">
+    </div>
+    <div class="cfg-field">
+      <label><i class="ti ti-currency-euro" style="font-size:12px"></i> Solde (€)</label>
+      <input type="number" id="treso-solde" step="0.01" placeholder="0.00" oninput="updateTresorerie()" style="width:130px">
+    </div>
+    <div style="font-size:12px;color:var(--purple-d);display:flex;align-items:center;gap:6px">
+      <i class="ti ti-info-circle" style="font-size:14px"></i>
+      Solde du relevé bancaire à la date choisie
+    </div>
+  </div>
+
+  <!-- KPIs trésorerie -->
+  <div class="card-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.25rem">
+    <div class="metric">
+      <div class="metric-label">Solde bancaire saisi</div>
+      <div class="metric-value ok" id="treso-k-solde">—</div>
+      <div class="metric-sub" id="treso-k-solde-date">non renseigné</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Engagements en attente</div>
+      <div class="metric-value danger" id="treso-k-engage">0 €</div>
+      <div class="metric-sub" id="treso-k-engage-sub">factures non payées</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Subventions à recevoir</div>
+      <div class="metric-value warn" id="treso-k-subv">0 €</div>
+      <div class="metric-sub">financeurs non soldés</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Trésorerie nette disponible</div>
+      <div class="metric-value" id="treso-k-nette">—</div>
+      <div class="metric-sub">solde − engagements + subventions</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+
+    <!-- Factures en attente -->
+    <div>
+      <div class="sec-header" style="margin-top:0">
+        <div class="sec-title"><i class="ti ti-receipt"></i> Factures non payées</div>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tw"><table>
+          <thead><tr><th>Fournisseur</th><th>Réf.</th><th>Pôle</th><th>Statut</th><th style="text-align:right">Montant</th></tr></thead>
+          <tbody id="treso-factures-tbody"></tbody>
+          <tfoot><tr class="tf">
+            <td colspan="4">Total engagé</td>
+            <td style="text-align:right" id="treso-total-engage">0,00 €</td>
+          </tr></tfoot>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- Subventions à recevoir -->
+    <div>
+      <div class="sec-header" style="margin-top:0">
+        <div class="sec-title"><i class="ti ti-coin"></i> Subventions à recevoir</div>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tw"><table>
+          <thead><tr><th>Financeur</th><th>Pôle</th><th style="text-align:right">Prévu</th><th style="text-align:right">Reçu</th><th style="text-align:right">Restant</th></tr></thead>
+          <tbody id="treso-subv-tbody"></tbody>
+          <tfoot><tr class="tf">
+            <td colspan="2">Total à recevoir</td>
+            <td id="treso-subv-prevu" style="text-align:right">—</td>
+            <td id="treso-subv-recu" style="text-align:right">—</td>
+            <td style="text-align:right" id="treso-total-subv">0,00 €</td>
+          </tr></tfoot>
+        </table></div>
+      </div>
+
+      <!-- Vérification via relevé -->
+      <div class="card" style="margin-top:1rem">
+        <div class="sec-title" style="margin-bottom:.75rem"><i class="ti ti-check"></i> Vérification via relevé importé</div>
+        <div id="treso-verif">
+          <p style="font-size:13px;color:var(--text2)">Importez un relevé bancaire pour vérifier l'écart avec le solde saisi.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tableau récapitulatif signable -->
+  <div class="card" style="margin-top:1.25rem">
+    <div class="sec-header" style="margin-top:0">
+      <div class="sec-title"><i class="ti ti-file-description"></i> Récapitulatif trésorerie — signable</div>
+      <button class="btn btn-secondary btn-sm" onclick="exportTresoTxt()"><i class="ti ti-download"></i> Export TXT</button>
+    </div>
+    <div id="treso-recap" style="font-size:13px;font-family:monospace;background:var(--bg2);padding:1rem;border-radius:var(--r);line-height:1.8;white-space:pre-wrap"></div>
   </div>
 </div>
 
@@ -889,6 +997,7 @@ let state = {
   regles: [],         // règles d'étiquetage mémorisées [{libelle_contains, pole, sousPrj, cat}]
   importBuffer: [],   // opérations en attente de validation
   factures: [],       // suivi des factures fournisseurs
+  tresorerie: { solde: null, dateSolde: '' }, // solde bancaire saisi manuellement
 };
 
 let editPoleId = null;
@@ -920,6 +1029,10 @@ function updateAll() {
   renderExport();
   updateSidebar();
   renderKpisFactures();
+  // Mettre à jour la tréso si la page est visible
+  if (document.getElementById('page-tresorerie')?.classList.contains('active')) {
+    updateTresorerie();
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -933,6 +1046,20 @@ function showPage(id, poleId) {
     const nav = document.getElementById('nav-factures');
     if (nav) nav.classList.add('active');
     showPage_factures();
+    return;
+  }
+  if (id === 'tresorerie') {
+    document.getElementById('page-tresorerie').classList.add('active');
+    const nav = document.getElementById('nav-tresorerie');
+    if (nav) nav.classList.add('active');
+    // Restaurer le solde saisi depuis le state
+    if (state.tresorerie?.solde !== null && state.tresorerie?.solde !== undefined) {
+      document.getElementById('treso-solde').value = state.tresorerie.solde;
+    }
+    if (state.tresorerie?.dateSolde) {
+      document.getElementById('treso-date-solde').value = state.tresorerie.dateSolde;
+    }
+    updateTresorerie();
     return;
   }
   if (id === 'pole' && poleId) {
@@ -1454,7 +1581,7 @@ function importMaCompta(input) {
     return parsed.length ? parsed : null;
   };
 
-  // Latin-1 en premier (MaCompta)
+  // Windows-1252 en premier (MaCompta France), puis latin-1, puis UTF-8
   const r1 = new FileReader();
   r1.onload = e => {
     const res = parse(e.target.result);
@@ -1462,15 +1589,19 @@ function importMaCompta(input) {
     const r2 = new FileReader();
     r2.onload = e2 => {
       const res2 = parse(e2.target.result);
-      if (res2) showPreviewMaCompta(res2, file.name);
-      else {
-        document.getElementById('macompta-preview').innerHTML =
+      if (res2) { showPreviewMaCompta(res2, file.name); return; }
+      const r3 = new FileReader();
+      r3.onload = e3 => {
+        const res3 = parse(e3.target.result);
+        if (res3) showPreviewMaCompta(res3, file.name);
+        else document.getElementById('macompta-preview').innerHTML =
           `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i>Aucune écriture détectée. Vérifiez que c'est bien l'export "Journaux" de MaCompta.</div>`;
-      }
+      };
+      r3.readAsText(file, 'utf-8');
     };
-    r2.readAsText(file, 'utf-8');
+    r2.readAsText(file, 'latin-1');
   };
-  r1.readAsText(file, 'latin-1');
+  r1.readAsText(file, 'windows-1252');
   input.value = '';
 }
 
@@ -2376,8 +2507,144 @@ function statutBadge(s) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// SUIVI FACTURES
+// TRÉSORERIE
 // ══════════════════════════════════════════════════════════════
+function updateTresorerie() {
+  const soldeSaisi = parseFloat(document.getElementById('treso-solde').value) || null;
+  const dateSolde  = document.getElementById('treso-date-solde').value;
+
+  // ── KPI solde saisi ──
+  document.getElementById('treso-k-solde').textContent = soldeSaisi !== null ? fmt(soldeSaisi) : '—';
+  document.getElementById('treso-k-solde').className   = 'metric-value ' + (soldeSaisi !== null ? 'ok' : '');
+  document.getElementById('treso-k-solde-date').textContent = dateSolde
+    ? 'au ' + dateSolde.split('-').reverse().join('/')
+    : 'non renseigné';
+
+  // ── Engagements : factures non payées ──
+  const facEnAttente = (state.factures||[]).filter(f => !['payee','cloturee'].includes(f.statut));
+  const totalEngage  = facEnAttente.reduce((s,f) => s + (f.montant||0), 0);
+  document.getElementById('treso-k-engage').textContent   = fmt(totalEngage);
+  document.getElementById('treso-k-engage-sub').textContent = facEnAttente.length + ' facture(s)';
+
+  // Table factures en attente
+  const facTbody = document.getElementById('treso-factures-tbody');
+  if (!facEnAttente.length) {
+    facTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text3)">Aucune facture en attente</td></tr>';
+  } else {
+    facTbody.innerHTML = [...facEnAttente]
+      .sort((a,b) => (a.dateRecep||'').localeCompare(b.dateRecep||''))
+      .map(f => {
+        const pole = state.poles.find(p => p.id === f.pole);
+        const st   = FAC_STATUTS[f.statut] || { lbl: f.statut, cls: 'b-gray' };
+        return `<tr>
+          <td>${f.fourn||'—'}</td>
+          <td><span class="code">${f.ref||'—'}</span></td>
+          <td>${pole ? `<span class="badge" style="background:${POLE_BG[pole.couleur]};color:${POLE_TEXT[pole.couleur]}">${pole.nom}</span>` : '—'}</td>
+          <td><span class="badge ${st.cls}">${st.lbl}</span></td>
+          <td style="text-align:right;color:var(--red)">${fmt(f.montant||0)}</td>
+        </tr>`;
+      }).join('');
+  }
+  document.getElementById('treso-total-engage').textContent = fmt(totalEngage);
+
+  // ── Subventions à recevoir ──
+  const etiq = state.operations.filter(o => o.pole && o.montant > 0);
+  let totalSubvPrevu = 0, totalSubvRecu = 0;
+  const subvRows = [];
+
+  state.poles.forEach(p => {
+    if (!p.financeurs || !p.financeurs.length) return;
+    p.financeurs.forEach(f => {
+      if (!f.prevu || f.prevu <= 0) return;
+      const recu = etiq.filter(o => o.pole === p.id && o.financeurId === f.id)
+                       .reduce((s,o) => s + o.montant, 0);
+      const restant = f.prevu - recu;
+      if (restant <= 0) return; // déjà soldé
+      totalSubvPrevu += f.prevu;
+      totalSubvRecu  += recu;
+      subvRows.push({ nom: f.nom, pole: p, prevu: f.prevu, recu, restant });
+    });
+  });
+
+  const totalSubvRestant = totalSubvPrevu - totalSubvRecu;
+  document.getElementById('treso-k-subv').textContent = fmt(totalSubvRestant);
+  document.getElementById('treso-subv-prevu').textContent = fmt(totalSubvPrevu);
+  document.getElementById('treso-subv-recu').textContent  = fmt(totalSubvRecu);
+  document.getElementById('treso-total-subv').textContent = fmt(totalSubvRestant);
+
+  const subvTbody = document.getElementById('treso-subv-tbody');
+  if (!subvRows.length) {
+    subvTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text3)">Tous les financeurs sont soldés</td></tr>';
+  } else {
+    subvTbody.innerHTML = subvRows.map(r => `<tr>
+      <td>${r.nom}</td>
+      <td><span class="badge" style="background:${POLE_BG[r.pole.couleur]};color:${POLE_TEXT[r.pole.couleur]}">${r.pole.nom}</span></td>
+      <td style="text-align:right">${fmt(r.prevu)}</td>
+      <td style="text-align:right;color:var(--teal)">${fmt(r.recu)}</td>
+      <td style="text-align:right;color:var(--amber);font-weight:600">${fmt(r.restant)}</td>
+    </tr>`).join('');
+  }
+
+  // ── Trésorerie nette ──
+  const tresoNette = soldeSaisi !== null
+    ? soldeSaisi - totalEngage + totalSubvRestant
+    : null;
+  const netteEl = document.getElementById('treso-k-nette');
+  netteEl.textContent = tresoNette !== null ? fmt(tresoNette) : '—';
+  netteEl.className   = 'metric-value ' + (tresoNette === null ? '' : tresoNette < 0 ? 'danger' : tresoNette < 10000 ? 'warn' : 'ok');
+
+  // ── Vérification via relevé importé ──
+  const encaissements = state.operations.filter(o => o.montant > 0 && o.source === 'banque');
+  const totalEncaisse = encaissements.reduce((s,o) => s + o.montant, 0);
+  const totalDepBanque = state.operations.filter(o => o.montant < 0 && o.source === 'banque').reduce((s,o) => s + Math.abs(o.montant), 0);
+  const verifDiv = document.getElementById('treso-verif');
+  if (!encaissements.length && !totalDepBanque) {
+    verifDiv.innerHTML = '<p style="font-size:13px;color:var(--text2)">Importez un relevé bancaire pour vérifier l\'écart avec le solde saisi.</p>';
+  } else {
+    const ecart = soldeSaisi !== null ? soldeSaisi - (totalEncaisse - totalDepBanque) : null;
+    verifDiv.innerHTML = `
+      <div style="font-size:13px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Total encaissements (relevé)</span><span style="color:var(--teal)">${fmt(totalEncaisse)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Total débits (relevé)</span><span style="color:var(--red)">− ${fmt(totalDepBanque)}</span></div>
+        <div style="display:flex;justify-content:space-between;border-top:0.5px solid var(--border);padding-top:6px"><span style="color:var(--text2)">Solde net relevé importé</span><span style="font-weight:600">${fmt(totalEncaisse - totalDepBanque)}</span></div>
+        ${ecart !== null ? `<div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Écart avec solde saisi</span><span class="${Math.abs(ecart)<1?'ok':'warn'}">${ecart>=0?'+':''}${fmt(ecart)}</span></div>` : ''}
+      </div>`;
+  }
+
+  // Persister le solde saisi
+  state.tresorerie = { solde: soldeSaisi, dateSolde };
+  sauvegarder(true);
+  const recap = document.getElementById('treso-recap');
+  const d = new Date().toLocaleDateString('fr-FR');
+  recap.textContent = `TABLEAU DE TRÉSORERIE — Association Coll.in
+Date d'édition : ${d}${dateSolde ? ' · Solde au ' + dateSolde.split('-').reverse().join('/') : ''}
+
+──────────────────────────────────────────────────
+SOLDE BANCAIRE RÉEL                ${soldeSaisi !== null ? fmt(soldeSaisi).padStart(15) : '          non renseigné'}
+──────────────────────────────────────────────────
+ENGAGEMENTS EN ATTENTE             ${fmt(-totalEngage).padStart(15)}
+  ${facEnAttente.length} facture(s) fournisseurs non payée(s)
+──────────────────────────────────────────────────
+SUBVENTIONS À RECEVOIR             ${fmt(totalSubvRestant).padStart(15)}
+  ${subvRows.length} financeur(s) non soldé(s)
+══════════════════════════════════════════════════
+TRÉSORERIE NETTE DISPONIBLE        ${tresoNette !== null ? fmt(tresoNette).padStart(15) : '          solde non saisi'}
+══════════════════════════════════════════════════
+
+Certifié exact par la coordinatrice générale
+
+Date : _______________   Signature : ___________________`;
+}
+
+function exportTresoTxt() {
+  const txt = document.getElementById('treso-recap').textContent;
+  if (!txt) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=utf-8' }));
+  a.download = 'Collin_tresorerie_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '.txt';
+  a.click();
+  toast('Tableau de trésorerie exporté');
+}
 const FAC_STATUTS = {
   recue:      { lbl:'Reçue',               cls:'b-blue',   icon:'ti-mail' },
   verifiee:   { lbl:'Vérifiée',            cls:'b-purple', icon:'ti-check' },
