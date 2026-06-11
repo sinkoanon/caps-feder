@@ -773,15 +773,23 @@ tbody tr:hover td{background:var(--bg2)}
     <!-- Bloc identité facture -->
     <div style="background:var(--bg2);border-radius:var(--r);padding:.875rem;margin-bottom:1rem">
       <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:.75rem">Identité de la facture</p>
-      <div class="fg fg-3" style="margin-bottom:8px">
+      <div class="fg fg-2" style="margin-bottom:8px">
+        <div class="fgroup"><label>Type *</label>
+          <select id="mf-type" onchange="toggleTypeFac()">
+            <option value="fournisseur">Facture fournisseur (dépense)</option>
+            <option value="client">Facture client (recette)</option>
+          </select>
+        </div>
         <div class="fgroup"><label>Référence facture *</label><input type="text" id="mf-ref" placeholder="Ex : FAC-2026-042"></div>
-        <div class="fgroup"><label>Fournisseur *</label><input type="text" id="mf-fourn" placeholder="Ex : Aggelos"></div>
-        <div class="fgroup"><label>Montant TTC (€) *</label><input type="number" id="mf-montant" step="0.01" min="0" placeholder="0.00"></div>
       </div>
-      <div class="fg fg-3">
-        <div class="fgroup"><label>Date de réception</label><input type="date" id="mf-date-recep"></div>
-        <div class="fgroup"><label>Date d'échéance</label><input type="date" id="mf-date-echeance"></div>
+      <div class="fg fg-3" style="margin-bottom:8px">
+        <div class="fgroup"><label id="mf-fourn-label">Fournisseur *</label><input type="text" id="mf-fourn" placeholder="Ex : Aggelos"></div>
+        <div class="fgroup"><label>Montant TTC (€) *</label><input type="number" id="mf-montant" step="0.01" min="0" placeholder="0.00"></div>
         <div class="fgroup"><label>N° de commande</label><input type="text" id="mf-commande" placeholder="Optionnel"></div>
+      </div>
+      <div class="fg fg-2">
+        <div class="fgroup"><label id="mf-date-recep-label">Date de réception</label><input type="date" id="mf-date-recep"></div>
+        <div class="fgroup"><label>Date d'échéance</label><input type="date" id="mf-date-echeance"></div>
       </div>
     </div>
 
@@ -817,11 +825,10 @@ tbody tr:hover td{background:var(--bg2)}
         <div class="fgroup"><label>Responsable</label>
           <select id="mf-resp">
             <option value="">—</option>
-            <option value="Pauline">Pauline Picat</option>
-            <option value="Gwladys">Gwladys</option>
-            <option value="Sarah">Sarah Lobre</option>
-            <option value="Mangalya">Mangalya</option>
-            <option value="Autre">Autre</option>
+            <option value="coordo_a">Coordo Générale A</option>
+            <option value="coordo_b">Coordo Générale B</option>
+            <option value="coordo_formation">Coordo Formation</option>
+            <option value="autre">Autre</option>
           </select>
         </div>
       </div>
@@ -836,10 +843,10 @@ tbody tr:hover td{background:var(--bg2)}
           <div class="fgroup"><label>Payé par</label>
             <select id="mf-paye-par">
               <option value="">—</option>
-              <option value="Pauline">Pauline Picat</option>
-              <option value="Gwladys">Gwladys</option>
-              <option value="Sarah">Sarah Lobre</option>
-              <option value="Mangalya">Mangalya</option>
+              <option value="coordo_a">Coordo Générale A</option>
+              <option value="coordo_b">Coordo Générale B</option>
+              <option value="coordo_formation">Coordo Formation</option>
+              <option value="autre">Autre</option>
             </select>
           </div>
           <div class="fgroup"><label>Réf. enregistrement MaCompta</label><input type="text" id="mf-ref-compta" placeholder="Ex : ACH-2026-042"></div>
@@ -2646,13 +2653,55 @@ function exportTresoTxt() {
   toast('Tableau de trésorerie exporté');
 }
 const FAC_STATUTS = {
+  // Fournisseur
   recue:      { lbl:'Reçue',               cls:'b-blue',   icon:'ti-mail' },
   verifiee:   { lbl:'Vérifiée',            cls:'b-purple', icon:'ti-check' },
   enregistree:{ lbl:'Enregistrée',         cls:'b-amber',  icon:'ti-book' },
   payee:      { lbl:'Payée',               cls:'b-teal',   icon:'ti-currency-euro' },
   cloturee:   { lbl:'Clôturée',            cls:'b-gray',   icon:'ti-lock' },
+  // Client
+  emise:      { lbl:'Émise',               cls:'b-blue',   icon:'ti-send' },
+  envoyee:    { lbl:'Envoyée',             cls:'b-purple', icon:'ti-mail' },
+  encaissee:  { lbl:'Encaissée',           cls:'b-teal',   icon:'ti-coin' },
+  impayee:    { lbl:'Impayée',             cls:'b-red',    icon:'ti-alert-triangle' },
 };
-const FAC_RESPONSABLES = ['Pauline','Gwladys','Sarah','Mangalya','Autre'];
+
+function toggleTypeFac() {
+  const type = document.getElementById('mf-type').value;
+  const isClient = type === 'client';
+  // Adapter labels
+  document.getElementById('mf-fourn-label').textContent = isClient ? 'Client *' : 'Fournisseur *';
+  document.getElementById('mf-date-recep-label').textContent = isClient ? 'Date d\'émission' : 'Date de réception';
+  document.getElementById('mf-fourn').placeholder = isClient ? 'Ex : Commune de Toulouse' : 'Ex : Aggelos';
+  // Adapter statuts
+  const sel = document.getElementById('mf-statut');
+  if (isClient) {
+    sel.innerHTML = `
+      <option value="emise">Émise</option>
+      <option value="envoyee">Envoyée au client</option>
+      <option value="encaissee">Encaissée</option>
+      <option value="impayee">Impayée / relance</option>
+      <option value="cloturee">Clôturée</option>`;
+  } else {
+    sel.innerHTML = `
+      <option value="recue">Reçue</option>
+      <option value="verifiee">Vérifiée</option>
+      <option value="enregistree">Enregistrée dans MaCompta</option>
+      <option value="payee">Payée</option>
+      <option value="cloturee">Clôturée</option>`;
+  }
+  // Adapter label paiement
+  const paiDiv = document.getElementById('mf-paiement-fields');
+  if (isClient) {
+    document.querySelector('#mf-paiement-fields .ib-amber span').innerHTML =
+      '<strong>Règle obligatoire :</strong> renseigner la date et le libellé exact du virement reçu pour valider l\'encaissement.';
+  } else {
+    document.querySelector('#mf-paiement-fields .ib-amber span').innerHTML =
+      '<strong>Règle obligatoire :</strong> renseigner la date et le libellé exact du virement bancaire pour valider le paiement.';
+  }
+  togglePaiementFields();
+}
+const FAC_RESPONSABLES = ['coordo_a','coordo_b','coordo_formation','autre'];
 
 // Initialisation factures dans le state
 if (!state.factures) state.factures = [];
@@ -2670,12 +2719,14 @@ function showPage_factures() {
 function renderKpisFactures() {
   const F = state.factures;
   const now = new Date();
-  const recues    = F.filter(f=>f.statut==='recue').length;
-  const verif     = F.filter(f=>f.statut==='verifiee').length;
-  const enreg     = F.filter(f=>f.statut==='enregistree').length;
-  const payees    = F.filter(f=>f.statut==='payee').length;
-  const retard    = F.filter(f=>!['payee','cloturee'].includes(f.statut) && f.dateRecep && joursEcart(f.dateRecep,now)>30).length;
-  const enAttente = F.filter(f=>!['payee','cloturee'].includes(f.statut)).length;
+  const fournisseurs = F.filter(f => f.type !== 'client');
+  const clients      = F.filter(f => f.type === 'client');
+  const recues    = fournisseurs.filter(f=>f.statut==='recue').length;
+  const verif     = fournisseurs.filter(f=>f.statut==='verifiee').length;
+  const enreg     = fournisseurs.filter(f=>f.statut==='enregistree').length;
+  const payees    = fournisseurs.filter(f=>f.statut==='payee').length;
+  const retard    = F.filter(f=>!['payee','cloturee','encaissee'].includes(f.statut) && f.dateRecep && joursEcart(f.dateRecep,now)>30).length;
+  const enAttente = fournisseurs.filter(f=>!['payee','cloturee'].includes(f.statut)).length;
 
   document.getElementById('fac-k-recue').textContent   = recues;
   document.getElementById('fac-k-verif').textContent   = verif;
@@ -2744,11 +2795,12 @@ function renderFactures() {
     total += f.montant||0;
     const st = FAC_STATUTS[f.statut]||{lbl:f.statut,cls:'b-gray'};
     const pole = state.poles.find(p=>p.id===f.pole);
-    const jours = f.dateRecep && !['payee','cloturee'].includes(f.statut) ? joursEcart(f.dateRecep,now) : null;
+    const isClient = f.type === 'client';
+    const jours = f.dateRecep && !['payee','cloturee','encaissee'].includes(f.statut) ? joursEcart(f.dateRecep,now) : null;
     const retardBadge = jours!==null && jours>30 ? `<span class="badge b-red">${jours}j</span>` : (jours!==null ? `<span class="badge b-gray">${jours}j</span>` : '—');
     const pjBtn = f.pj ? `<button class="btn btn-secondary btn-xs" onclick="voirPJ('${f.id}')" title="Voir la pièce jointe"><i class="ti ti-file-invoice"></i></button>` : '';
     return `<tr>
-      <td><strong style="font-size:12px">${f.ref||'—'}</strong></td>
+      <td><strong style="font-size:12px">${f.ref||'—'}</strong>${isClient ? ' <span class="badge b-teal" style="font-size:10px">Client</span>' : ''}</td>
       <td>${f.fourn||'—'}</td>
       <td style="text-align:right;white-space:nowrap">${fmt(f.montant||0)}</td>
       <td style="white-space:nowrap">${f.dateRecep||'—'}</td>
@@ -2774,6 +2826,8 @@ function ouvrirModalFacture(id) {
   document.getElementById('modal-fac-title').textContent = f ? 'Modifier la facture' : 'Nouvelle facture';
   document.getElementById('mf-btn-suppr').style.display = f ? 'inline-flex' : 'none';
 
+  document.getElementById('mf-type').value      = f?.type||'fournisseur';
+  toggleTypeFac();
   document.getElementById('mf-ref').value       = f?.ref||'';
   document.getElementById('mf-fourn').value      = f?.fourn||'';
   document.getElementById('mf-montant').value    = f?.montant||'';
@@ -2823,7 +2877,7 @@ function updateMfSP(curSP) {
 
 function togglePaiementFields() {
   const s = document.getElementById('mf-statut').value;
-  const show = ['payee','cloturee'].includes(s);
+  const show = ['payee','cloturee','encaissee'].includes(s);
   document.getElementById('mf-paiement-fields').style.display = show ? 'block' : 'none';
 }
 
@@ -2861,15 +2915,16 @@ function voirPJ(id) {
 }
 
 function validerFacture() {
+  const type     = document.getElementById('mf-type').value;
   const ref      = document.getElementById('mf-ref').value.trim();
   const fourn    = document.getElementById('mf-fourn').value.trim();
   const montant  = parseFloat(document.getElementById('mf-montant').value)||0;
   const statut   = document.getElementById('mf-statut').value;
 
-  if (!ref || !fourn || montant<=0) { toast('Référence, fournisseur et montant requis', 'warn'); return; }
+  if (!ref || !fourn || montant<=0) { toast('Référence, tiers et montant requis', 'warn'); return; }
 
-  // Règle d'or paiement
-  if (['payee','cloturee'].includes(statut)) {
+  // Règle d'or paiement / encaissement
+  if (['payee','cloturee','encaissee'].includes(statut)) {
     const datePaie = document.getElementById('mf-date-paie').value;
     const libVir   = document.getElementById('mf-libelle-virement').value.trim();
     if (!datePaie || !libVir) {
@@ -2884,6 +2939,7 @@ function validerFacture() {
 
   const fac = {
     id:              editFacId || Date.now()+'_'+Math.random().toString(36).slice(2),
+    type,
     ref,
     fourn,
     montant,
