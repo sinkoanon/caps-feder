@@ -299,25 +299,69 @@ tbody tr:hover td{background:var(--bg2)}
      IMPORT
 ═══════════════════════════════════════ -->
 <div id="page-import" class="page">
-  <div class="page-header"><h2>Import relevés bancaires</h2><p>Importez vos exports CSV — toutes les opérations de Coll.in</p></div>
+  <div class="page-header"><h2>Import relevés &amp; exports comptables</h2><p>Importez vos fichiers CSV depuis votre banque ou MaCompta</p></div>
 
-  <div class="ib ib-blue"><i class="ti ti-info-circle"></i><span>Format attendu : colonnes <span class="code">Date</span>, <span class="code">Libellé</span>, <span class="code">Débit</span>. Séparateur <code>;</code> ou <code>,</code>. Encodage UTF-8. Les règles d'étiquetage mémorisées seront appliquées automatiquement.</span></div>
+  <div class="two-col" style="margin-bottom:1.25rem">
 
-  <div class="drop-zone" onclick="document.getElementById('file-releve').click()">
-    <i class="ti ti-building-bank"></i>
-    <strong>Relevé bancaire CSV</strong>
-    <p>Cliquer pour sélectionner · Export de votre espace en ligne</p>
-    <p style="margin-top:4px;font-size:11px">Format Crédit Agricole, BNP, CIC, Crédit Coopératif…</p>
-  </div>
-  <input type="file" id="file-releve" accept=".csv" style="display:none" onchange="importCSV(this)">
-
-  <div id="import-preview" style="margin-top:1rem"></div>
-  <div id="import-actions" style="display:none;margin-top:1rem">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <span id="import-count" style="font-size:13px;color:var(--text2)"></span>
-      <button class="btn btn-primary" onclick="validerImport()"><i class="ti ti-check"></i> Importer ces opérations</button>
-      <button class="btn btn-secondary" onclick="annulerImport()"><i class="ti ti-x"></i> Annuler</button>
+    <!-- Zone 1 — Relevé bancaire -->
+    <div>
+      <div class="sec-title" style="margin-bottom:.75rem"><i class="ti ti-building-bank"></i> Relevé bancaire</div>
+      <div class="ib ib-blue"><i class="ti ti-info-circle"></i><span>Export Crédit Mutuel en ligne · CSV latin-1 · colonnes Date, Libellé, Débit, Crédit</span></div>
+      <div class="drop-zone" onclick="document.getElementById('file-releve').click()">
+        <i class="ti ti-building-bank"></i>
+        <strong>Relevé bancaire CSV</strong>
+        <p>Export de votre espace Crédit Mutuel en ligne</p>
+      </div>
+      <input type="file" id="file-releve" accept=".csv" style="display:none" onchange="importCSV(this)">
+      <div id="import-preview" style="margin-top:.75rem"></div>
+      <div id="import-actions" style="display:none;margin-top:.75rem">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span id="import-count" style="font-size:13px;color:var(--text2)"></span>
+          <button class="btn btn-primary btn-sm" onclick="validerImport()"><i class="ti ti-check"></i> Importer</button>
+          <button class="btn btn-secondary btn-sm" onclick="annulerImport()"><i class="ti ti-x"></i> Annuler</button>
+        </div>
+      </div>
     </div>
+
+    <!-- Zone 2 — MaCompta -->
+    <div>
+      <div class="sec-title" style="margin-bottom:.75rem"><i class="ti ti-report-money"></i> Export MaCompta</div>
+      <div class="ib ib-blue"><i class="ti ti-info-circle"></i><span>Menu <strong>Exports → Journaux</strong> · choisir <strong>"Tous les journaux"</strong> · format CSV · période complète</span></div>
+      <div class="drop-zone" onclick="document.getElementById('file-macompta').click()">
+        <i class="ti ti-report-money"></i>
+        <strong>Export Journaux MaCompta CSV</strong>
+        <p>Journaux complets (HA, BQ1, OD…) · latin-1 · séparateur ;</p>
+      </div>
+      <input type="file" id="file-macompta" accept=".csv" style="display:none" onchange="importMaCompta(this)">
+      <div id="macompta-preview" style="margin-top:.75rem"></div>
+      <div id="macompta-actions" style="display:none;margin-top:.75rem">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span id="macompta-count" style="font-size:13px;color:var(--text2)"></span>
+          <button class="btn btn-primary btn-sm" onclick="validerImportMaCompta()"><i class="ti ti-check"></i> Importer</button>
+          <button class="btn btn-secondary btn-sm" onclick="annulerImportMaCompta()"><i class="ti ti-x"></i> Annuler</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tableau de mapping codes comptables -->
+  <div class="sec-title" style="margin-bottom:.75rem"><i class="ti ti-arrows-exchange"></i> Mapping automatique codes comptables → catégories FEDER</div>
+  <div class="card" style="padding:0">
+    <div class="tw"><table>
+      <thead><tr><th>Code comptable</th><th>Libellé MaCompta</th><th>Catégorie FEDER</th><th>Pôle suggéré</th></tr></thead>
+      <tbody>
+        <tr><td><span class="code">641</span></td><td>Rémunérations du personnel</td><td><span class="badge b-purple">Personnel</span></td><td><span class="badge b-gray">À étiqueter</span></td></tr>
+        <tr><td><span class="code">645</span></td><td>Cotisations sociales</td><td><span class="badge b-purple">Personnel</span></td><td><span class="badge b-gray">À étiqueter</span></td></tr>
+        <tr><td><span class="code">604</span></td><td>Achats prestations activités</td><td><span class="badge b-teal">Prestations</span></td><td><span class="badge b-gray">À étiqueter</span></td></tr>
+        <tr><td><span class="code">611</span></td><td>Sous-traitance générale</td><td><span class="badge b-teal">Prestations</span></td><td><span class="badge b-gray">À étiqueter</span></td></tr>
+        <tr><td><span class="code">621</span></td><td>Honoraires &amp; rémunérations</td><td><span class="badge b-teal">Prestations</span></td><td><span class="badge b-gray">À étiqueter</span></td></tr>
+        <tr><td><span class="code">623</span></td><td>Publicité, communication</td><td><span class="badge b-amber">Communication</span></td><td><span class="badge b-gray">À étiqueter</span></td></tr>
+        <tr><td><span class="code">625</span></td><td>Déplacements &amp; missions</td><td><span class="badge b-amber">Communication</span></td><td><span class="badge b-gray">À étiqueter</span></td></tr>
+        <tr><td><span class="code">606</span><span class="code" style="margin-left:4px">613</span><span class="code" style="margin-left:4px">626</span></td><td>Fournitures, locations, télécoms</td><td><span class="badge b-gray">Fonctionnement</span></td><td><span class="badge b-blue">FONC</span></td></tr>
+        <tr><td><span class="code">74x</span></td><td>Subventions reçues</td><td><span class="badge b-gray">Subvention</span></td><td><span class="badge b-gray">À étiqueter</span></td></tr>
+      </tbody>
+    </table></div>
   </div>
 </div>
 
@@ -1290,6 +1334,199 @@ function annulerImport() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// IMPORT MACOMPTA
+// ══════════════════════════════════════════════════════════════
+
+// Mapping codes comptables → catégorie FEDER
+const MAPPING_COMPTES = {
+  '641': 'personnel', '642': 'personnel', '645': 'personnel', '646': 'personnel',
+  '604': 'prestations', '605': 'prestations', '611': 'prestations', '621': 'prestations',
+  '623': 'communication', '625': 'communication', '626': 'communication',
+  '606': 'fonctionnement', '613': 'fonctionnement', '615': 'fonctionnement',
+  '616': 'fonctionnement', '618': 'fonctionnement', '627': 'fonctionnement',
+  '628': 'fonctionnement', '635': 'fonctionnement', '637': 'fonctionnement',
+  '74' : 'subvention',
+};
+
+// Mapping codes → pôle suggéré automatique
+const MAPPING_POLE_AUTO = {
+  '606': 'FONC', '613': 'FONC', '615': 'FONC',
+  '616': 'FONC', '618': 'FONC', '626': 'FONC',
+  '628': 'FONC', '635': 'FONC', '627': 'FONC',
+};
+
+function categorieFromCompte(code) {
+  if (!code) return null;
+  const c = code.toString();
+  // Essai exact sur 3 chiffres
+  for (const [prefix, cat] of Object.entries(MAPPING_COMPTES)) {
+    if (c.startsWith(prefix)) return cat;
+  }
+  return null;
+}
+
+function poleAutoFromCompte(code) {
+  if (!code) return null;
+  const c = code.toString();
+  for (const [prefix, pole] of Object.entries(MAPPING_POLE_AUTO)) {
+    if (c.startsWith(prefix)) return pole;
+  }
+  return null;
+}
+
+let macomptaBuffer = [];
+
+function importMaCompta(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const parse = (text) => {
+    const lines = text.split('\n').filter(l => l.trim());
+
+    // Trouver la ligne d'en-tête : contient "Journal" et "Date"
+    let headerLine = -1;
+    for (let i = 0; i < Math.min(10, lines.length); i++) {
+      const l = lines[i].replace(/[^\x00-\x7F]/g, 'X').toLowerCase();
+      if (l.includes('journal') && l.includes('date') && l.includes('bit')) {
+        headerLine = i; break;
+      }
+    }
+    if (headerLine < 0) return null;
+
+    // Colonnes fixes format MaCompta journaux :
+    // Journal(0) ; Date(1) ; N°pièce(2) ; Réf pièce(3) ; Code Compte(4) ; Libellé Compte(5) ; Libellé(6) ; Débit(7) ; Crédit(8)
+    const parsed = [];
+    const seen = new Set(); // anti-doublons
+
+    for (let i = headerLine + 1; i < lines.length; i++) {
+      const cols = lines[i].split(';').map(c => c.trim().replace(/^"|"$/g, ''));
+      if (cols.length < 7) continue;
+
+      const journal    = cols[0] || '';
+      const dateRaw    = cols[1] || '';
+      const nPiece     = cols[2] || '';
+      const refPiece   = cols[3] || '';
+      const codeCompte = cols[4] || '';
+      const libCompte  = cols[5] || '';
+      const libelle    = cols[6] || '';
+      const debitRaw   = cols[7] || '';
+      const creditRaw  = cols[8] || '';
+
+      if (!dateRaw.match(/^\d{2}\/\d{2}\/\d{4}$/)) continue;
+      if (!libelle) continue;
+
+      // Filtrer : garder uniquement les comptes de charges (6) et produits (7)
+      // Exclure comptes 5xx (banque — déjà dans le relevé) et 4xx (tiers)
+      const prefixe = codeCompte.substring(0, 1);
+      if (!['6', '7'].includes(prefixe)) continue;
+
+      const dateISO = dateRaw.split('/').reverse().join('-');
+      const net = s => parseFloat(s.replace(/\s/g,'').replace(',','.')) || 0;
+      const debit  = net(debitRaw);
+      const credit = net(creditRaw);
+      const montant = debit > 0 ? -debit : credit > 0 ? credit : 0;
+      if (montant === 0) continue;
+
+      // Anti-doublon : même date + libellé + montant + compte
+      const key = dateISO + '|' + libelle + '|' + montant + '|' + codeCompte;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      // Catégorie et pôle automatiques
+      const cat  = categorieFromCompte(codeCompte);
+      const pole = poleAutoFromCompte(codeCompte) || null;
+
+      parsed.push({
+        id: 'MC_' + Date.now() + '_' + i,
+        date: dateISO,
+        libelle: libelle + (libCompte ? ' [' + libCompte + ']' : ''),
+        montant,
+        ref: refPiece || nPiece,
+        source: 'macompta',
+        statut: 'valide', // déjà enregistré en comptabilité
+        notes: 'Compte ' + codeCompte + ' · Journal ' + journal,
+        pole,
+        sousPrj: null,
+        cat,
+        ventilation: null,
+      });
+    }
+    return parsed.length ? parsed : null;
+  };
+
+  // Latin-1 en premier (MaCompta)
+  const r1 = new FileReader();
+  r1.onload = e => {
+    const res = parse(e.target.result);
+    if (res) { showPreviewMaCompta(res, file.name); return; }
+    const r2 = new FileReader();
+    r2.onload = e2 => {
+      const res2 = parse(e2.target.result);
+      if (res2) showPreviewMaCompta(res2, file.name);
+      else {
+        document.getElementById('macompta-preview').innerHTML =
+          `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i>Aucune écriture détectée. Vérifiez que c'est bien l'export "Journaux" de MaCompta.</div>`;
+      }
+    };
+    r2.readAsText(file, 'utf-8');
+  };
+  r1.readAsText(file, 'latin-1');
+  input.value = '';
+}
+
+function showPreviewMaCompta(parsed, filename) {
+  macomptaBuffer = parsed;
+  const charges  = parsed.filter(o => o.montant < 0).length;
+  const produits = parsed.filter(o => o.montant > 0).length;
+  const autocat  = parsed.filter(o => o.cat).length;
+  const autopole = parsed.filter(o => o.pole).length;
+  document.getElementById('macompta-preview').innerHTML = `
+    <div class="ib ib-green"><i class="ti ti-check"></i>
+      <span><strong>${filename}</strong> — <strong>${parsed.length}</strong> écritures · ${charges} charges · ${produits} produits
+      · <strong>${autocat}</strong> catégories auto · <strong>${autopole}</strong> pôles suggérés</span>
+    </div>
+    <div class="card" style="padding:0"><div class="tw"><table>
+      <thead><tr><th>Date</th><th>Libellé</th><th>Compte</th><th>Catégorie auto</th><th style="text-align:right">Montant</th></tr></thead>
+      <tbody>${parsed.slice(0,10).map(o=>{
+        const notes = o.notes || '';
+        const compte = notes.match(/Compte (\w+)/)?.[1] || '';
+        const catLbl = {personnel:'Personnel',prestations:'Prestations',communication:'Communication',fonctionnement:'Fonctionnement',subvention:'Subvention'}[o.cat] || '—';
+        return `<tr>
+          <td style="white-space:nowrap">${o.date}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.libelle}</td>
+          <td><span class="code">${compte}</span></td>
+          <td>${o.cat ? `<span class="badge b-${o.cat==='personnel'?'purple':o.cat==='prestations'?'teal':o.cat==='communication'?'amber':'gray'}">${catLbl}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+          <td style="text-align:right;color:${o.montant<0?'var(--red)':'var(--teal)'}">${o.montant<0?'':'+'}${fmt(Math.abs(o.montant))}</td>
+        </tr>`;
+      }).join('')}
+      ${parsed.length>10?`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:.5rem">… ${parsed.length-10} autres écritures</td></tr>`:''}
+      </tbody></table></div></div>`;
+  document.getElementById('macompta-count').textContent = parsed.length + ' écritures à importer';
+  document.getElementById('macompta-actions').style.display = 'flex';
+}
+
+function validerImportMaCompta() {
+  const existing = new Set(state.operations.map(o => o.date+'|'+o.libelle+'|'+o.montant));
+  const news = macomptaBuffer.filter(o => !existing.has(o.date+'|'+o.libelle+'|'+o.montant));
+  // Appliquer les règles mémorisées sur les lignes sans pôle
+  news.forEach(o => { if (!o.pole) appliquerRegle(o); });
+  state.operations.push(...news);
+  macomptaBuffer = [];
+  document.getElementById('macompta-preview').innerHTML =
+    `<div class="ib ib-green"><i class="ti ti-check"></i>${news.length} écriture(s) importée(s) depuis MaCompta.</div>`;
+  document.getElementById('macompta-actions').style.display = 'none';
+  sauvegarder(true);
+  updateAll();
+  toast(news.length + ' écritures MaCompta importées');
+}
+
+function annulerImportMaCompta() {
+  macomptaBuffer = [];
+  document.getElementById('macompta-preview').innerHTML = '';
+  document.getElementById('macompta-actions').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
 // ÉTIQUETAGE
 // ══════════════════════════════════════════════════════════════
 function renderFiltresEtiquetage() {
@@ -2188,259 +2425,4 @@ function renderKpisFactures() {
 // ── ALERTES ──
 function renderAlertesFactures() {
   const now = new Date();
-  const retards = state.factures.filter(f=>
-    !['payee','cloturee'].includes(f.statut) && f.dateRecep && joursEcart(f.dateRecep,now)>30
-  );
-  const aDiv = document.getElementById('fac-alertes');
-  if (!retards.length) { aDiv.innerHTML=''; return; }
-  aDiv.innerHTML = `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i><div>
-    <strong>${retards.length} facture(s) en retard de paiement (&gt; 30 jours)</strong><br>
-    ${retards.map(f=>`<span style="font-size:12px">• ${f.fourn} — ${f.ref} — ${joursEcart(f.dateRecep,now)}j — statut : ${FAC_STATUTS[f.statut]?.lbl||f.statut}</span>`).join('<br>')}
-  </div></div>`;
-}
-
-// ── FILTRES ──
-function renderFiltresFactures() {
-  const fp = document.getElementById('fac-f-pole');
-  const fr = document.getElementById('fac-f-resp');
-  const curP=fp.value, curR=fr.value;
-  fp.innerHTML = '<option value="">Tous</option>' + state.poles.map(p=>`<option value="${p.id}" ${p.id===curP?'selected':''}>${p.nom}</option>`).join('');
-  const resps = [...new Set(state.factures.map(f=>f.resp).filter(Boolean))];
-  fr.innerHTML = '<option value="">ToutEs</option>' + resps.map(r=>`<option value="${r}" ${r===curR?'selected':''}>${r}</option>`).join('');
-}
-
-function resetFiltresFactures() {
-  document.getElementById('fac-f-statut').value='';
-  document.getElementById('fac-f-pole').value='';
-  document.getElementById('fac-f-resp').value='';
-  renderFactures();
-}
-
-// ── TABLE FACTURES ──
-function renderFactures() {
-  const fs = document.getElementById('fac-f-statut').value;
-  const fp = document.getElementById('fac-f-pole').value;
-  const fr = document.getElementById('fac-f-resp').value;
-  let facs = state.factures;
-  if (fs) facs = facs.filter(f=>f.statut===fs);
-  if (fp) facs = facs.filter(f=>f.pole===fp);
-  if (fr) facs = facs.filter(f=>f.resp===fr);
-  facs = [...facs].sort((a,b)=>(b.dateRecep||'').localeCompare(a.dateRecep||''));
-
-  const now = new Date();
-  let total=0;
-  const tbody = document.getElementById('fac-tbody');
-  if (!facs.length) {
-    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--text3)">Aucune facture pour ces critères</td></tr>';
-    document.getElementById('fac-total').textContent='0,00 €';
-    return;
-  }
-
-  tbody.innerHTML = facs.map(f=>{
-    total += f.montant||0;
-    const st = FAC_STATUTS[f.statut]||{lbl:f.statut,cls:'b-gray'};
-    const pole = state.poles.find(p=>p.id===f.pole);
-    const jours = f.dateRecep && !['payee','cloturee'].includes(f.statut) ? joursEcart(f.dateRecep,now) : null;
-    const retardBadge = jours!==null && jours>30 ? `<span class="badge b-red">${jours}j</span>` : (jours!==null ? `<span class="badge b-gray">${jours}j</span>` : '—');
-    const pjBtn = f.pj ? `<button class="btn btn-secondary btn-xs" onclick="voirPJ('${f.id}')" title="Voir la pièce jointe"><i class="ti ti-file-invoice"></i></button>` : '';
-    return `<tr>
-      <td><strong style="font-size:12px">${f.ref||'—'}</strong></td>
-      <td>${f.fourn||'—'}</td>
-      <td style="text-align:right;white-space:nowrap">${fmt(f.montant||0)}</td>
-      <td style="white-space:nowrap">${f.dateRecep||'—'}</td>
-      <td>${pole?`<span class="badge" style="background:${POLE_BG[pole.couleur]};color:${POLE_TEXT[pole.couleur]}">${pole.nom}</span>`:'—'}</td>
-      <td><span class="badge ${st.cls}">${st.lbl}</span></td>
-      <td style="font-size:12px">${f.resp||'—'}</td>
-      <td style="white-space:nowrap;font-size:12px">${f.datePaie||'—'}</td>
-      <td style="font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.libelleVirement||''}">${f.libelleVirement||'—'}</td>
-      <td>${retardBadge}</td>
-      <td style="white-space:nowrap">${pjBtn}<button class="btn btn-secondary btn-xs" style="margin-left:3px" onclick="ouvrirModalFacture('${f.id}')" title="Modifier"><i class="ti ti-edit"></i></button></td>
-    </tr>`;
-  }).join('');
-  document.getElementById('fac-total').textContent = fmt(total);
-  renderKpisFactures();
-  renderAlertesFactures();
-}
-
-// ── MODAL FACTURE ──
-function ouvrirModalFacture(id) {
-  editFacId = id || null;
-  mfPJData = null;
-  const f = id ? state.factures.find(x=>x.id===id) : null;
-  document.getElementById('modal-fac-title').textContent = f ? 'Modifier la facture' : 'Nouvelle facture';
-  document.getElementById('mf-btn-suppr').style.display = f ? 'inline-flex' : 'none';
-
-  document.getElementById('mf-ref').value       = f?.ref||'';
-  document.getElementById('mf-fourn').value      = f?.fourn||'';
-  document.getElementById('mf-montant').value    = f?.montant||'';
-  document.getElementById('mf-date-recep').value = f?.dateRecep||new Date().toISOString().slice(0,10);
-  document.getElementById('mf-date-echeance').value = f?.dateEcheance||'';
-  document.getElementById('mf-commande').value   = f?.commande||'';
-  document.getElementById('mf-statut').value     = f?.statut||'recue';
-  document.getElementById('mf-resp').value       = f?.resp||'';
-  document.getElementById('mf-date-paie').value  = f?.datePaie||'';
-  document.getElementById('mf-libelle-virement').value = f?.libelleVirement||'';
-  document.getElementById('mf-paye-par').value   = f?.payePar||'';
-  document.getElementById('mf-ref-compta').value = f?.refCompta||'';
-  document.getElementById('mf-notes').value      = f?.notes||'';
-
-  // Pôle
-  const poleEl = document.getElementById('mf-pole');
-  poleEl.innerHTML = '<option value="">—</option>' + state.poles.map(p=>`<option value="${p.id}" ${p.id===f?.pole?'selected':''}>${p.nom}</option>`).join('');
-  updateMfSP(f?.sousPrj);
-
-  // Catégorie
-  document.getElementById('mf-cat').innerHTML = '<option value="">—</option>' + state.categories.map(c=>`<option value="${c.id}" ${c.id===f?.cat?'selected':''}>${c.nom}</option>`).join('');
-
-  // PJ existante
-  if (f?.pj) {
-    mfPJData = f.pj;
-    document.getElementById('mf-pj-zone').style.display = 'none';
-    document.getElementById('mf-pj-preview').style.display = 'flex';
-    document.getElementById('mf-pj-nom').textContent = f.pj.nom;
-  } else {
-    document.getElementById('mf-pj-zone').style.display = 'block';
-    document.getElementById('mf-pj-preview').style.display = 'none';
-  }
-
-  togglePaiementFields();
-  document.getElementById('modal-facture').classList.add('open');
-}
-
-function fermerModalFacture() { document.getElementById('modal-facture').classList.remove('open'); editFacId=null; mfPJData=null; }
-
-function updateMfSP(curSP) {
-  const poleId = document.getElementById('mf-pole').value;
-  const pole = state.poles.find(p=>p.id===poleId);
-  const sel = document.getElementById('mf-sousprj');
-  sel.innerHTML = '<option value="">—</option>' + (pole?.sousProjets||[]).map(sp=>`<option value="${sp.id}" ${sp.id===curSP?'selected':''}>${sp.nom}</option>`).join('');
-  sel.disabled = !(pole?.sousProjets?.length);
-}
-
-function togglePaiementFields() {
-  const s = document.getElementById('mf-statut').value;
-  const show = ['payee','cloturee'].includes(s);
-  document.getElementById('mf-paiement-fields').style.display = show ? 'block' : 'none';
-}
-
-function chargerPJ(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 5*1024*1024) { toast('Fichier trop volumineux (max 5 Mo)', 'warn'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    mfPJData = { nom: file.name, data: e.target.result, type: file.type };
-    document.getElementById('mf-pj-zone').style.display = 'none';
-    document.getElementById('mf-pj-preview').style.display = 'flex';
-    document.getElementById('mf-pj-nom').textContent = file.name;
-  };
-  reader.readAsDataURL(file);
-  input.value='';
-}
-
-function supprimerPJ() {
-  mfPJData = null;
-  document.getElementById('mf-pj-zone').style.display = 'block';
-  document.getElementById('mf-pj-preview').style.display = 'none';
-  document.getElementById('mf-pj-nom').textContent = '';
-}
-
-function voirPJ(id) {
-  const f = state.factures.find(x=>x.id===id);
-  if (!f?.pj?.data) return;
-  const w = window.open();
-  if (f.pj.type==='application/pdf') {
-    w.document.write(`<iframe src="${f.pj.data}" style="width:100%;height:100vh;border:none"></iframe>`);
-  } else {
-    w.document.write(`<img src="${f.pj.data}" style="max-width:100%">`);
-  }
-}
-
-function validerFacture() {
-  const ref      = document.getElementById('mf-ref').value.trim();
-  const fourn    = document.getElementById('mf-fourn').value.trim();
-  const montant  = parseFloat(document.getElementById('mf-montant').value)||0;
-  const statut   = document.getElementById('mf-statut').value;
-
-  if (!ref || !fourn || montant<=0) { toast('Référence, fournisseur et montant requis', 'warn'); return; }
-
-  // Règle d'or paiement
-  if (['payee','cloturee'].includes(statut)) {
-    const datePaie = document.getElementById('mf-date-paie').value;
-    const libVir   = document.getElementById('mf-libelle-virement').value.trim();
-    if (!datePaie || !libVir) {
-      toast('Date de paiement et libellé du virement obligatoires', 'warn');
-      document.getElementById('mf-date-paie').style.borderColor='var(--red)';
-      document.getElementById('mf-libelle-virement').style.borderColor='var(--red)';
-      return;
-    }
-    document.getElementById('mf-date-paie').style.borderColor='';
-    document.getElementById('mf-libelle-virement').style.borderColor='';
-  }
-
-  const fac = {
-    id:              editFacId || Date.now()+'_'+Math.random().toString(36).slice(2),
-    ref,
-    fourn,
-    montant,
-    dateRecep:       document.getElementById('mf-date-recep').value,
-    dateEcheance:    document.getElementById('mf-date-echeance').value,
-    commande:        document.getElementById('mf-commande').value.trim(),
-    statut,
-    resp:            document.getElementById('mf-resp').value,
-    datePaie:        document.getElementById('mf-date-paie').value,
-    libelleVirement: document.getElementById('mf-libelle-virement').value.trim(),
-    payePar:         document.getElementById('mf-paye-par').value,
-    refCompta:       document.getElementById('mf-ref-compta').value.trim(),
-    pole:            document.getElementById('mf-pole').value,
-    sousPrj:         document.getElementById('mf-sousprj').value,
-    cat:             document.getElementById('mf-cat').value,
-    notes:           document.getElementById('mf-notes').value.trim(),
-    pj:              mfPJData,
-    dateModif:       new Date().toISOString(),
-  };
-
-  if (editFacId) {
-    const idx = state.factures.findIndex(x=>x.id===editFacId);
-    if (idx>=0) state.factures[idx] = fac;
-  } else {
-    state.factures.push(fac);
-  }
-
-  fermerModalFacture();
-  sauvegarder(true);
-  renderFactures();
-  toast(editFacId ? 'Facture mise à jour' : 'Facture enregistrée');
-}
-
-function supprimerFacture() {
-  if (!confirm('Supprimer définitivement cette facture ?')) return;
-  state.factures = state.factures.filter(f=>f.id!==editFacId);
-  fermerModalFacture();
-  sauvegarder(true);
-  renderFactures();
-  toast('Facture supprimée');
-}
-
-// ── EXPORT FACTURES ──
-function exportFacturesCSV() {
-  if (!state.factures.length) { toast('Aucune facture à exporter','warn'); return; }
-  const BOM='\uFEFF',sep=';';
-  const h=['Référence','Fournisseur','Montant TTC','Date réception','Date échéance','Pôle','Catégorie','Statut','Responsable','Date paiement','Libellé virement','Payé par','Réf. MaCompta','Notes'].join(sep);
-  const rows=[...state.factures].sort((a,b)=>(b.dateRecep||'').localeCompare(a.dateRecep||'')).map(f=>{
-    const pole=state.poles.find(p=>p.id===f.pole);
-    const cat=state.categories.find(c=>c.id===f.cat);
-    return [f.ref||'','"'+(f.fourn||'')+'"',(f.montant||0).toFixed(2).replace('.',','),f.dateRecep||'',f.dateEcheance||'',pole?.nom||'',cat?.nom||'',FAC_STATUTS[f.statut]?.lbl||f.statut,f.resp||'',f.datePaie||'','"'+(f.libelleVirement||'')+'"',f.payePar||'',f.refCompta||'','"'+(f.notes||'')+'"'].join(sep);
-  }).join('\n');
-  dl(BOM+h+'\n'+rows,'Collin_factures_'+today()+'.csv','text/csv;charset=utf-8');
-  toast('Export factures téléchargé');
-}
-
-// ── HELPER DATE ──
-function joursEcart(dateStr, now) {
-  const d = new Date(dateStr);
-  return Math.floor((now-d)/(1000*60*60*24));
-}
-</script>
-</body>
-</html>
+  const ret
