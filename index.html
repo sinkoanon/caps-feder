@@ -261,6 +261,16 @@ tbody tr:hover td{background:var(--bg2)}
     <p id="db-subtitle">Vue consolidée de tous les pôles</p>
   </div>
 
+  <div class="cfg-banner" style="margin-bottom:1.25rem">
+    <div class="cfg-field">
+      <label><i class="ti ti-calendar" style="font-size:12px"></i> Exercice</label>
+      <select id="db-filtre-exercice" onchange="renderDashboard()" style="padding:4px 8px;font-size:13px;font-weight:500;background:#fff;border:.5px solid rgba(83,74,183,.25);border-radius:8px;color:var(--purple-d);outline:none;font-family:inherit">
+        <option value="">Tous les exercices</option>
+      </select>
+    </div>
+    <div style="font-size:12px;color:var(--purple-d)">Filtre les métriques et graphiques sur l'année sélectionnée</div>
+  </div>
+
   <div class="card-grid" id="db-kpis">
     <div class="metric"><div class="metric-label">Budget total</div><div class="metric-value" id="db-budget">—</div><div class="metric-sub">tous pôles</div></div>
     <div class="metric"><div class="metric-label">Fonds reçus</div><div class="metric-value ok" id="db-recettes">0 €</div><div class="metric-sub" id="db-recettes-sub">encaissements étiquetés</div></div>
@@ -980,6 +990,15 @@ let state = {
             { id:'ademe',           nom:'ADEME',           prevu:4764,  conditionDeblocage:true },
             { id:'feder_ccc',       nom:'FEDER',           prevu:11003 },
             { id:'autofinancement', nom:'Autofinancement', prevu:24986 }
+          ]},
+        { id:'PERS_FEDER', nom:'Personnel FEDER', budget:198103,
+          dateDebut:'2025-10-06', dateFin:'2027-04-05',
+          financeurs:[],
+          personnel:[
+            { id:'picp', nom:'PIC.P', tauxEligibilite:77, tauxMajoration:15,
+              dateDebut:'2025-10-06', dateFin:'2027-04-05' },
+            { id:'vala', nom:'VAL.A', tauxEligibilite:90, tauxMajoration:15,
+              dateDebut:'', dateFin:'' }
           ]}
       ],
       financeurs:[
@@ -1019,6 +1038,7 @@ let state = {
   importBuffer: [],   // opérations en attente de validation
   factures: [],       // suivi des factures fournisseurs
   tresorerie: { solde: null, dateSolde: '' }, // solde bancaire saisi manuellement
+  bilansFormation: [], // clôtures annuelles du pôle formation { annee, recettes, depenses, solde, dateClôture, transfere }
 };
 
 let editPoleId = null;
@@ -1121,8 +1141,20 @@ function renderNav() {
 // DASHBOARD
 // ══════════════════════════════════════════════════════════════
 function renderDashboard() {
+  // Peupler le select des exercices disponibles depuis les dates des opérations
+  const exercicesDisponibles = [...new Set(state.operations.map(o => o.date?.substring(0,4)).filter(Boolean))].sort();
+  const selExercice = document.getElementById('db-filtre-exercice');
+  if (selExercice) {
+    const curVal = selExercice.value;
+    selExercice.innerHTML = '<option value="">Tous les exercices</option>' +
+      exercicesDisponibles.map(a => `<option value="${a}" ${a===curVal?'selected':''}>${a}</option>`).join('');
+  }
+  const exerciceFiltre = selExercice?.value || '';
+
   const totalBudget = calcBudgetTotal();
-  const ops = state.operations;
+  const ops = exerciceFiltre
+    ? state.operations.filter(o => o.date?.startsWith(exerciceFiltre))
+    : state.operations;
   const etiq = ops.filter(o => o.pole);
   // Dépenses = opérations négatives (débits)
   const totalDep = etiq.filter(o => o.montant <= 0).reduce((s,o) => s + montantNet(o), 0);
@@ -1137,7 +1169,7 @@ function renderDashboard() {
 
   document.getElementById('db-budget').textContent = fmtInt(totalBudget);
   document.getElementById('db-recettes').textContent = fmtInt(totalRec);
-  document.getElementById('db-recettes-sub').textContent = etiq.filter(o=>o.montant>0).length + ' encaissement(s)';
+  document.getElementById('db-recettes-sub').textContent = etiq.filter(o=>o.montant>0).length + ' encaissement(s)' + (exerciceFiltre ? ' · ' + exerciceFiltre : '');
   document.getElementById('db-dep').textContent = fmtInt(totalDep);
   document.getElementById('db-dep-sub').textContent = 'sur ' + fmtInt(totalBudget) + ' prévu';
   document.getElementById('db-taux').textContent = taux + ' %';
@@ -1147,7 +1179,7 @@ function renderDashboard() {
   document.getElementById('db-nonetiq').className = 'metric-value ' + (nonEtiq > 0 ? 'danger' : 'ok');
 
   // Barres par pôle — dépenses directes + part fonctionnement ventilée
-  const vent = calcVentilation();
+  const vent = calcVentilation(exerciceFiltre);
   const barres = document.getElementById('db-barres');
   barres.innerHTML = state.poles.map(p => {
     const pDep     = vent[p.id]?.directes  || 0;
@@ -1200,6 +1232,129 @@ function renderPoleCards() {
 // ══════════════════════════════════════════════════════════════
 // PAGE PÔLE
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// BILAN FORMATION ANNUEL — clôture une fois par an
+// ══════════════════════════════════════════════════════════════
+function renderBilanFormation(p, etiq) {
+  // Exercices disponibles depuis les opérations du pôle FORM
+  const exercices = [...new Set(etiq.map(o => o.date?.substring(0,4)).filter(Boolean))].sort();
+  if (!state.bilansFormation) state.bilansFormation = [];
+
+  const lignesClotures = state.bilansFormation
+    .filter(b => true)
+    .sort((a,b) => b.annee - a.annee)
+    .map(b => `
+      <tr>
+        <td><strong>${b.annee}</strong></td>
+        <td style="text-align:right;color:var(--teal)">${fmtInt(b.recettes)}</td>
+        <td style="text-align:right">${fmtInt(b.depenses)}</td>
+        <td style="text-align:right" class="${b.solde>=0?'ok':'danger'}">${b.solde>=0?'+':''}${fmtInt(b.solde)}</td>
+        <td style="text-align:right">${b.recettes>0?Math.round(b.solde/b.recettes*100):0} %</td>
+        <td>${b.transfere ? '<span class="badge b-teal">Transféré → FONC</span>' : '<span class="badge b-gray">Non transféré</span>'}</td>
+        <td><button class="btn btn-danger btn-xs" onclick="supprimerBilanFormation(${b.annee})"><i class="ti ti-trash"></i></button></td>
+      </tr>`).join('');
+
+  const selectExercices = exercices.map(a => `<option value="${a}">${a}</option>`).join('');
+
+  return `
+    <div class="card" style="margin-bottom:1.25rem;border-left:3px solid var(--teal)">
+      <div class="sec-header" style="margin-top:0">
+        <div class="sec-title"><i class="ti ti-calendar-stats"></i> Bilan formation annuel — rentabilité du pôle</div>
+      </div>
+      <div class="ib ib-blue"><i class="ti ti-info-circle"></i><span>Calcul une fois par an : si les recettes formation dépassent les dépenses réelles, l'écart peut être transféré vers le Fonctionnement général. La clôture est manuelle et validée par vous — rien n'est transféré automatiquement.</span></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:1rem;flex-wrap:wrap">
+        <div class="fgroup" style="min-width:120px"><label>Exercice à clôturer</label>
+          <select id="bf-exercice">${selectExercices || '<option value="">Aucun exercice disponible</option>'}</select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="previsualiserBilanFormation('${p.id}')"><i class="ti ti-calculator"></i> Calculer</button>
+      </div>
+      <div id="bf-preview"></div>
+      ${state.bilansFormation.length ? `
+      <div class="tw" style="margin-top:1rem"><table>
+        <thead><tr><th>Exercice</th><th style="text-align:right">Recettes</th><th style="text-align:right">Dépenses</th><th style="text-align:right">Solde</th><th style="text-align:right">Rentabilité</th><th>Statut</th><th></th></tr></thead>
+        <tbody>${lignesClotures}</tbody>
+      </table></div>` : ''}
+    </div>`;
+}
+
+function previsualiserBilanFormation(poleId) {
+  const annee = document.getElementById('bf-exercice').value;
+  if (!annee) { toast('Sélectionnez un exercice', 'warn'); return; }
+  const ops = state.operations.filter(o => o.pole === poleId && o.date?.startsWith(annee));
+  const recettes = ops.filter(o => o.montant > 0).reduce((s,o) => s + o.montant, 0);
+  const depenses = ops.filter(o => o.montant <= 0).reduce((s,o) => s + montantNet(o), 0);
+  const solde = recettes - depenses;
+  const dejaCloture = state.bilansFormation?.find(b => b.annee === parseInt(annee));
+
+  document.getElementById('bf-preview').innerHTML = `
+    <div class="card-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:.75rem">
+      <div class="metric"><div class="metric-label">Recettes ${annee}</div><div class="metric-value ok">${fmtInt(recettes)}</div></div>
+      <div class="metric"><div class="metric-label">Dépenses ${annee}</div><div class="metric-value warn">${fmtInt(depenses)}</div></div>
+      <div class="metric"><div class="metric-label">Solde / Rentabilité</div><div class="metric-value ${solde>=0?'ok':'danger'}">${solde>=0?'+':''}${fmtInt(solde)}</div></div>
+    </div>
+    ${dejaCloture ? `<div class="ib ib-amber"><i class="ti ti-alert-triangle"></i><span>Cet exercice a déjà été clôturé le ${dejaCloture.dateCloture}. Reclôturer remplacera les valeurs précédentes.</span></div>` : ''}
+    ${solde > 0 ? `
+      <div class="ib ib-green"><i class="ti ti-check"></i><span>Solde positif de <strong>${fmtInt(solde)}</strong> — peut être transféré vers le pôle Fonctionnement général.</span></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="cloturerBilanFormation('${poleId}', true)"><i class="ti ti-check"></i> Clôturer et transférer ${fmtInt(solde)} vers FONC</button>
+        <button class="btn btn-secondary btn-sm" onclick="cloturerBilanFormation('${poleId}', false)">Clôturer sans transfert</button>
+      </div>` : `
+      <div class="ib ib-red"><i class="ti ti-alert-triangle"></i><span>Solde négatif — le pôle formation a coûté plus qu'il n'a rapporté cette année. Aucun transfert possible.</span></div>
+      <button class="btn btn-secondary btn-sm" onclick="cloturerBilanFormation('${poleId}', false)">Clôturer (constat)</button>`}
+  `;
+}
+
+function cloturerBilanFormation(poleId, avecTransfert) {
+  const annee = parseInt(document.getElementById('bf-exercice').value);
+  const ops = state.operations.filter(o => o.pole === poleId && o.date?.startsWith(annee.toString()));
+  const recettes = ops.filter(o => o.montant > 0).reduce((s,o) => s + o.montant, 0);
+  const depenses = ops.filter(o => o.montant <= 0).reduce((s,o) => s + montantNet(o), 0);
+  const solde = recettes - depenses;
+
+  if (!state.bilansFormation) state.bilansFormation = [];
+  state.bilansFormation = state.bilansFormation.filter(b => b.annee !== annee);
+  state.bilansFormation.push({
+    annee, recettes, depenses, solde,
+    dateCloture: new Date().toLocaleDateString('fr-FR'),
+    transfere: avecTransfert && solde > 0
+  });
+
+  if (avecTransfert && solde > 0) {
+    // Créer une opération de transfert FORM → FONC (visible et tracée)
+    state.operations.push({
+      id: 'TRANSFER_' + Date.now(),
+      date: annee + '-12-31',
+      libelle: `Transfert solde formation ${annee} vers Fonctionnement (clôture annuelle)`,
+      montant: -solde, // sortie du pôle FORM
+      pole: poleId, sousPrj: null, cat: 'fonctionnement',
+      statut: 'valide', source: 'cloture_formation',
+      notes: `Solde formation ${annee} transféré manuellement vers FONC`,
+    });
+    state.operations.push({
+      id: 'TRANSFER_IN_' + Date.now(),
+      date: annee + '-12-31',
+      libelle: `Réception transfert solde formation ${annee}`,
+      montant: solde, // entrée dans FONC
+      pole: 'FONC', sousPrj: null, cat: 'fonctionnement',
+      statut: 'valide', source: 'cloture_formation',
+      notes: `Solde formation ${annee} reçu depuis FORM`,
+    });
+  }
+
+  sauvegarder(true);
+  updateAll();
+  showPage('pole', poleId);
+  toast(avecTransfert && solde > 0 ? `Exercice ${annee} clôturé — ${fmtInt(solde)} transférés vers FONC` : `Exercice ${annee} clôturé`);
+}
+
+function supprimerBilanFormation(annee) {
+  if (!confirm(`Supprimer la clôture ${annee} ? Les opérations de transfert associées ne seront pas supprimées automatiquement.`)) return;
+  state.bilansFormation = state.bilansFormation.filter(b => b.annee !== annee);
+  sauvegarder(true);
+  updateAll();
+  toast('Clôture supprimée');
+}
+
 function renderPolePage(poleId) {
   const p = state.poles.find(x => x.id === poleId);
   if (!p) return;
@@ -1243,6 +1398,12 @@ function renderPolePage(poleId) {
       </div>`;
   }
 
+  // Bilan formation annuel — uniquement pour le pôle FORM
+  let bilanFormationSection = '';
+  if (poleId === 'FORM') {
+    bilanFormationSection = renderBilanFormation(p, etiq);
+  }
+
   // Sous-projets avec plan de financement
   let spSection = '';
   if (p.sousProjets && p.sousProjets.length) {
@@ -1251,8 +1412,11 @@ function renderPolePage(poleId) {
       const spPct = sp.budget > 0 ? Math.min(100, Math.round(spDep / sp.budget * 100)) : 0;
       const spRec = etiq.filter(o => o.sousPrj === sp.id && o.montant > 0).reduce((s,o) => s+o.montant, 0);
 
+      // Normaliser financeurs : ancien format = string, nouveau format = tableau
+      const spFins = Array.isArray(sp.financeurs) ? sp.financeurs : [];
+
       // Alerte déblocage ADEME (ou autre financeur conditionnel)
-      const finCondit = (sp.financeurs||[]).filter(f => f.conditionDeblocage);
+      const finCondit = spFins.filter(f => f.conditionDeblocage);
       let alerteDeblocage = '';
       finCondit.forEach(f => {
         const restant = sp.budget - spDep;
@@ -1270,9 +1434,9 @@ function renderPolePage(poleId) {
 
       // Plan de financement du sous-projet
       let finTable = '';
-      if (sp.financeurs && sp.financeurs.length) {
-        const totalPrevu = sp.financeurs.reduce((s,f) => s+(f.prevu||0), 0);
-        const rows = sp.financeurs.map(f => {
+      if (spFins.length) {
+        const totalPrevu = spFins.reduce((s,f) => s+(f.prevu||0), 0);
+        const rows = spFins.map(f => {
           const recu = etiq.filter(o => o.sousPrj === sp.id && o.montant > 0 && o.financeurId === f.id).reduce((s,o) => s+o.montant, 0);
           const ecart = recu - (f.prevu||0);
           const pct = f.prevu > 0 ? Math.min(100, Math.round(recu/f.prevu*100)) : 0;
@@ -1306,6 +1470,69 @@ function renderPolePage(poleId) {
         </table></div>`;
       }
 
+      // Tableau Personnel FEDER — calcul taux éligibilité + majoration
+      let personnelTable = '';
+      if (sp.personnel && sp.personnel.length) {
+        const rows = sp.personnel.map(per => {
+          const opsPersonne = etiq.filter(o => o.sousPrj === sp.id && o.personneId === per.id && o.montant <= 0);
+          const brutVerse = opsPersonne.reduce((s,o) => s + montantNet(o), 0);
+          const montantEligible = brutVerse * (per.tauxEligibilite||0) / 100;
+          const montantRembourseFeder = montantEligible * (1 + (per.tauxMajoration||0)/100);
+          const partFonctionnement = montantEligible * (per.tauxMajoration||0) / 100;
+          const periodePer = per.dateDebut || per.dateFin
+            ? `${per.dateDebut?per.dateDebut.split('-').reverse().join('/'):'?'} → ${per.dateFin?per.dateFin.split('-').reverse().join('/'):'?'}`
+            : '';
+          return `<tr>
+            <td><strong>${per.nom}</strong>${periodePer?`<br><span style="font-size:10px;color:var(--text3)">${periodePer}</span>`:''}</td>
+            <td style="text-align:right">${fmtInt(brutVerse)}</td>
+            <td style="text-align:right">${per.tauxEligibilite}%</td>
+            <td style="text-align:right;color:var(--purple-d)">${fmtInt(montantEligible)}</td>
+            <td style="text-align:right;color:var(--teal)">${fmtInt(montantRembourseFeder)}</td>
+            <td style="text-align:right;color:var(--blue)">${fmtInt(partFonctionnement)}</td>
+          </tr>`;
+        }).join('');
+        const totBrut = sp.personnel.reduce((s,per) => {
+          const ops = etiq.filter(o => o.sousPrj === sp.id && o.personneId === per.id && o.montant <= 0);
+          return s + ops.reduce((a,o)=>a+montantNet(o),0);
+        }, 0);
+        const totElig = sp.personnel.reduce((s,per) => {
+          const ops = etiq.filter(o => o.sousPrj === sp.id && o.personneId === per.id && o.montant <= 0);
+          const brut = ops.reduce((a,o)=>a+montantNet(o),0);
+          return s + brut * (per.tauxEligibilite||0) / 100;
+        }, 0);
+        const totRembourse = sp.personnel.reduce((s,per) => {
+          const ops = etiq.filter(o => o.sousPrj === sp.id && o.personneId === per.id && o.montant <= 0);
+          const brut = ops.reduce((a,o)=>a+montantNet(o),0);
+          const elig = brut * (per.tauxEligibilite||0) / 100;
+          return s + elig * (1 + (per.tauxMajoration||0)/100);
+        }, 0);
+        const totFonc = totRembourse - totElig;
+        personnelTable = `
+        <div class="ib ib-blue" style="margin-top:.75rem"><i class="ti ti-info-circle"></i><span>
+          Le FEDER finance le <strong>taux d'éligibilité</strong> du salaire réel, majoré de <strong>15%</strong> au titre des frais généraux.
+          Le surplus (colonne "Part fonctionnement") alimente le pôle Fonctionnement général.
+        </span></div>
+        <div class="tw" style="margin-top:.5rem"><table>
+          <thead><tr>
+            <th>PersonnE</th>
+            <th style="text-align:right">Salaire versé</th>
+            <th style="text-align:right">Taux élig.</th>
+            <th style="text-align:right">Montant éligible</th>
+            <th style="text-align:right">Remboursé FEDER</th>
+            <th style="text-align:right">Part fonct.</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot><tr class="tf">
+            <td>Total</td>
+            <td style="text-align:right">${fmtInt(totBrut)}</td>
+            <td></td>
+            <td style="text-align:right;color:var(--purple-d)">${fmtInt(totElig)}</td>
+            <td style="text-align:right;color:var(--teal)">${fmtInt(totRembourse)}</td>
+            <td style="text-align:right;color:var(--blue)">${fmtInt(totFonc)}</td>
+          </tr></tfoot>
+        </table></div>`;
+      }
+
       // Période
       const periodeStr = sp.dateDebut || sp.dateFin
         ? `<span style="font-size:12px;color:var(--text2)">
@@ -1330,6 +1557,7 @@ function renderPolePage(poleId) {
         </div>
         ${alerteDeblocage}
         ${finTable}
+        ${personnelTable}
       </div>`;
     }).join('');
 
@@ -1413,6 +1641,7 @@ function renderPolePage(poleId) {
       </div>
     </div>` : ''}
     ${finSection}
+    ${bilanFormationSection}
     ${spSection}
     <div class="sec-header"><div class="sec-title"><i class="ti ti-list"></i> Opérations <span class="badge b-gray" style="margin-left:4px">${etiq.length}</span></div></div>
     <div class="card" style="padding:0">
@@ -1799,16 +2028,32 @@ function renderEtiquetage() {
       : '<option value="">—</option>';
     const isCredit = o.montant > 0;
     const montantStyle = isCredit ? 'color:var(--teal);font-weight:600' : 'font-weight:500';
+    // Sous-projet sélectionné a une liste "personnel" (ex: PERS_FEDER) → afficher un select personne
+    const spSelected = pole?.sousProjets?.find(sp => sp.id === o.sousPrj);
+    const personnelOpts = spSelected?.personnel?.length
+      ? `<select onchange="setEtiqPersonne('${o.id}',this.value)" style="margin-left:4px">
+          <option value="">— PersonnE</option>
+          ${spSelected.personnel.map(per => `<option value="${per.id}" ${o.personneId===per.id?'selected':''}>${per.nom} (${per.tauxEligibilite}%)</option>`).join('')}
+        </select>`
+      : '';
     return `<div class="etiq-row" id="erow-${o.id}">
       <span style="color:var(--text2)">${o.date}</span>
       <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${o.libelle}">${o.libelle}</span>
       <span style="text-align:right;${montantStyle}">${isCredit?'+':''}${fmt(montantNet(o))}</span>
       <select onchange="setEtiqPole('${o.id}',this.value)">${poleOpts.replace(`value="${o.pole||''}"`,`value="${o.pole||''}" selected`)}</select>
-      <select id="sp-${o.id}" onchange="${isCredit ? `setEtiqFinanceur('${o.id}',this.value)` : `setEtiqSP('${o.id}',this.value)`}">${isCredit ? finOpts : spOpts}</select>
+      <span style="display:flex;align-items:center">
+        <select id="sp-${o.id}" onchange="${isCredit ? `setEtiqFinanceur('${o.id}',this.value)` : `setEtiqSP('${o.id}',this.value)`}">${isCredit ? finOpts : spOpts}</select>
+        <span id="per-${o.id}">${personnelOpts}</span>
+      </span>
       <select onchange="setEtiqCat('${o.id}',this.value)">${catOpts.replace(`value="${o.cat||''}"`,`value="${o.cat||''}" selected`)}</select>
       <button class="btn btn-secondary btn-xs" onclick="ouvrirVentilation('${o.id}')" title="Ventilation manuelle"><i class="ti ti-percentage"></i></button>
     </div>`;
   }).join('');
+}
+
+function setEtiqPersonne(id, val) {
+  const op = state.operations.find(o => o.id === id);
+  if (op) { op.personneId = val || null; }
 }
 
 function setEtiqFinanceur(id, val) {
@@ -1835,7 +2080,23 @@ function setEtiqPole(id, val) {
 
 function setEtiqSP(id, val) {
   const op = state.operations.find(o => o.id === id);
-  if (op) { op.sousPrj = val || null; memoriserRegle(op); }
+  if (op) {
+    op.sousPrj = val || null;
+    op.personneId = null;
+    memoriserRegle(op);
+    // Mettre à jour le select personne si le sous-projet a une liste de personnel
+    const pole = state.poles.find(p => p.id === op.pole);
+    const sp = pole?.sousProjets?.find(s => s.id === val);
+    const perDiv = document.getElementById('per-' + id);
+    if (perDiv) {
+      perDiv.innerHTML = sp?.personnel?.length
+        ? `<select onchange="setEtiqPersonne('${id}',this.value)" style="margin-left:4px">
+            <option value="">— PersonnE</option>
+            ${sp.personnel.map(per => `<option value="${per.id}">${per.nom} (${per.tauxEligibilite}%)</option>`).join('')}
+          </select>`
+        : '';
+    }
+  }
 }
 
 function setEtiqCat(id, val) {
@@ -2434,8 +2695,9 @@ function calcBudgetTotal() {
 // ── VENTILATION FONCTIONNEMENT ────────────────────────────────
 // Calcule pour chaque pôle : dépenses directes + part du fonctionnement ventilée
 // Retourne un objet { poleId: { directes, ventilees, total } }
-function calcVentilation() {
-  const etiq = state.operations.filter(o => o.pole);
+function calcVentilation(exerciceFiltre) {
+  let etiq = state.operations.filter(o => o.pole);
+  if (exerciceFiltre) etiq = etiq.filter(o => o.date?.startsWith(exerciceFiltre));
 
   // Identifier les pôles "fonctionnement" (ventileAuto = true)
   const polesVentile = state.poles.filter(p => p.ventileAuto);
@@ -2574,6 +2836,28 @@ function importJSON(input) {
               const defPole = state.poles.find(x => x.id === p.id);
               p.financeurs = defPole?.financeurs || [];
             }
+            // Migrer les sous-projets : financeurs string → tableau
+            if (p.sousProjets) {
+              p.sousProjets.forEach(sp => {
+                const defPole = state.poles.find(x => x.id === p.id);
+                const defSP = defPole?.sousProjets?.find(x => x.id === sp.id);
+                if (!Array.isArray(sp.financeurs)) {
+                  // Ancien format string → tableau vide (le texte est perdu mais ça ne plante plus)
+                  sp.financeurs = defSP?.financeurs || [];
+                  sp.dateDebut = sp.dateDebut || defSP?.dateDebut || '';
+                  sp.dateFin = sp.dateFin || defSP?.dateFin || '';
+                }
+                if (!Array.isArray(sp.personnel)) {
+                  sp.personnel = defSP?.personnel || [];
+                }
+              });
+            }
+            // Ajouter PERS_FEDER s'il manque sur CAPS
+            if (p.id === 'CAPS' && p.sousProjets && !p.sousProjets.find(sp => sp.id === 'PERS_FEDER')) {
+              const defPole = state.poles.find(x => x.id === 'CAPS');
+              const defPers = defPole?.sousProjets?.find(sp => sp.id === 'PERS_FEDER');
+              if (defPers) p.sousProjets.push(defPers);
+            }
           });
           state.poles = s.poles;
         }
@@ -2581,6 +2865,7 @@ function importJSON(input) {
         if (s.operations) state.operations = s.operations;
         if (s.regles) state.regles = s.regles;
         if (s.factures) state.factures = s.factures;
+        if (s.bilansFormation) state.bilansFormation = s.bilansFormation;
         if (s.config) state.config = { ...state.config, ...s.config };
         syncCfgInputs();
         sauvegarder(true);
@@ -2647,12 +2932,48 @@ function sauvegarder(silent) {
 
 function chargerLS() {
   try {
-    const s=localStorage.getItem('collin_analytique_v2');
+    const s = localStorage.getItem('collin_analytique_v2');
     if (!s) return;
-    const saved=JSON.parse(s);
-    state={...state,...saved};
+    const saved = JSON.parse(s);
+
+    if (saved.poles && saved.poles.length > 0) {
+      saved.poles.forEach(p => {
+        if (!p.financeurs) {
+          const defPole = state.poles.find(x => x.id === p.id);
+          p.financeurs = defPole?.financeurs || [];
+        }
+        if (p.sousProjets) {
+          p.sousProjets.forEach(sp => {
+            const defPole = state.poles.find(x => x.id === p.id);
+            const defSP = defPole?.sousProjets?.find(x => x.id === sp.id);
+            if (!Array.isArray(sp.financeurs)) {
+              sp.financeurs = defSP?.financeurs || [];
+              sp.dateDebut = sp.dateDebut || defSP?.dateDebut || '';
+              sp.dateFin = sp.dateFin || defSP?.dateFin || '';
+            }
+            if (!Array.isArray(sp.personnel)) {
+              sp.personnel = defSP?.personnel || [];
+            }
+          });
+        }
+        // Ajouter PERS_FEDER s'il manque sur CAPS (nouvelle fonctionnalité)
+        if (p.id === 'CAPS' && p.sousProjets && !p.sousProjets.find(sp => sp.id === 'PERS_FEDER')) {
+          const defPole = state.poles.find(x => x.id === 'CAPS');
+          const defPers = defPole?.sousProjets?.find(sp => sp.id === 'PERS_FEDER');
+          if (defPers) p.sousProjets.push(defPers);
+        }
+      });
+      state.poles = saved.poles;
+    }
+    if (saved.categories && saved.categories.length > 0) state.categories = saved.categories;
+    if (saved.operations) state.operations = saved.operations;
+    if (saved.regles) state.regles = saved.regles;
+    if (saved.factures) state.factures = saved.factures;
+    if (saved.tresorerie) state.tresorerie = saved.tresorerie;
+    if (saved.bilansFormation) state.bilansFormation = saved.bilansFormation;
+    if (saved.config) state.config = { ...state.config, ...saved.config };
     syncCfgInputs();
-  } catch {}
+  } catch (e) { console.error('Erreur chargement localStorage:', e); }
 }
 
 // ══════════════════════════════════════════════════════════════
