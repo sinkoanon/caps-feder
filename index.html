@@ -229,6 +229,10 @@ tbody tr:hover td{background:var(--bg2)}
     <div id="nav-poles-list"></div>
   </div>
   <div class="nav-section">
+    <div class="nav-label">RessourcesH</div>
+    <button class="nav-item" id="nav-personnel" onclick="showPage('personnel')"><i class="ti ti-users"></i> Personnel</button>
+  </div>
+  <div class="nav-section">
     <div class="nav-label">Factures</div>
     <button class="nav-item" id="nav-factures" onclick="showPage('factures')">
       <i class="ti ti-receipt"></i> Suivi factures
@@ -411,6 +415,18 @@ tbody tr:hover td{background:var(--bg2)}
     </div>
     <div id="treso-recap" style="font-size:13px;font-family:monospace;background:var(--bg2);padding:1rem;border-radius:var(--r);line-height:1.8;white-space:pre-wrap"></div>
   </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PERSONNEL — ventilation RH multi-pôles
+═══════════════════════════════════════ -->
+<div id="page-personnel" class="page">
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div><h2>Personnel</h2><p>Poste contractuel et ventilation réelle du temps de travail par pôle</p></div>
+    <button class="btn btn-primary" onclick="ouvrirModalPersonne()"><i class="ti ti-plus"></i> Nouvelle personne</button>
+  </div>
+  <div class="ib ib-blue"><i class="ti ti-info-circle"></i><span>Tout pourcentage non explicitement ventilé est automatiquement attribué au pôle Fonctionnement général.</span></div>
+  <div id="personnel-list"></div>
 </div>
 
 <!-- ═══════════════════════════════════════
@@ -951,6 +967,38 @@ tbody tr:hover td{background:var(--bg2)}
   </div>
 </div>
 
+<!-- MODAL PERSONNE -->
+<div class="modal-bg" id="modal-personne">
+  <div class="modal" style="width:680px">
+    <h3 id="modal-personne-title">Nouvelle personne</h3>
+    <div class="fg fg-2" style="margin-bottom:10px">
+      <div class="fgroup"><label>Nom</label><input type="text" id="mpe-nom" placeholder="Ex : PIC.P"></div>
+    </div>
+    <div style="background:var(--bg2);border-radius:var(--r);padding:.875rem;margin-bottom:1rem">
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:.75rem">Poste contractuel (référence)</p>
+      <div class="fg fg-2">
+        <div class="fgroup"><label>Pôle de rattachement</label><select id="mpe-poste-pole"></select></div>
+        <div class="fgroup"><label>Quotité contractuelle (%)</label><input type="number" id="mpe-poste-pct" value="100" min="0" max="100"></div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em">Ventilation réelle par pôle</span>
+        <button class="btn btn-secondary btn-xs" onclick="ajouterVentilationPersonne()"><i class="ti ti-plus"></i> Ajouter une ligne</button>
+      </div>
+      <div id="ventilations-personne-list"></div>
+      <div id="mpe-reliquat" style="margin-top:8px;font-size:12px;padding:8px 10px;border-radius:6px"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:space-between;margin-top:1rem">
+      <button class="btn btn-danger btn-sm" id="mpe-btn-suppr" onclick="supprimerPersonne()" style="display:none"><i class="ti ti-trash"></i> Supprimer</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-secondary" onclick="fermerModalPersonne()">Annuler</button>
+        <button class="btn btn-primary" onclick="validerPersonne()"><i class="ti ti-check"></i> Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL VENTILATION -->
 <div class="modal-bg" id="modal-vent">
   <div class="modal">
@@ -1039,6 +1087,19 @@ let state = {
   factures: [],       // suivi des factures fournisseurs
   tresorerie: { solde: null, dateSolde: '' }, // solde bancaire saisi manuellement
   bilansFormation: [], // clôtures annuelles du pôle formation { annee, recettes, depenses, solde, dateClôture, transfere }
+  personnel: [
+    { id:'picp', nom:'PIC.P',
+      posteContractuel: { pole:'FONC', pct:100 },
+      ventilations: [
+        { id:'v1', pole:'FORM', sousProjet:null, pct:77, dontFeder:true, tauxFeder:77, tauxMajoration:15, dateDebut:'2025-10-06', dateFin:'2027-04-05', note:'FEDER' },
+        { id:'v2', pole:'FORM', sousProjet:null, pct:20, dontFeder:false, dateDebut:'', dateFin:'', note:'Accompagnement' },
+      ]},
+    { id:'vala', nom:'VAL.A',
+      posteContractuel: { pole:'CAPS', pct:100 },
+      ventilations: [
+        { id:'v1', pole:'CAPS', sousProjet:null, pct:90, dontFeder:true, tauxFeder:90, tauxMajoration:15, dateDebut:'', dateFin:'', note:'FEDER' },
+      ]},
+  ],
 };
 
 let editPoleId = null;
@@ -1074,6 +1135,9 @@ function updateAll() {
   if (document.getElementById('page-tresorerie')?.classList.contains('active')) {
     updateTresorerie();
   }
+  if (document.getElementById('page-personnel')?.classList.contains('active')) {
+    renderPagePersonnel();
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1101,6 +1165,13 @@ function showPage(id, poleId) {
       document.getElementById('treso-date-solde').value = state.tresorerie.dateSolde;
     }
     updateTresorerie();
+    return;
+  }
+  if (id === 'personnel') {
+    document.getElementById('page-personnel').classList.add('active');
+    const nav = document.getElementById('nav-personnel');
+    if (nav) nav.classList.add('active');
+    renderPagePersonnel();
     return;
   }
   if (id === 'pole' && poleId) {
@@ -1353,6 +1424,188 @@ function supprimerBilanFormation(annee) {
   sauvegarder(true);
   updateAll();
   toast('Clôture supprimée');
+}
+
+// ══════════════════════════════════════════════════════════════
+// PERSONNEL — ventilation RH multi-pôles
+// ══════════════════════════════════════════════════════════════
+let editPersonneId = null;
+
+function calcReliquatPersonne(ventilations) {
+  const total = (ventilations||[]).reduce((s,v) => s + (v.pct||0), 0);
+  return Math.max(0, 100 - total);
+}
+
+function renderPagePersonnel() {
+  if (!state.personnel) state.personnel = [];
+  const list = document.getElementById('personnel-list');
+  if (!state.personnel.length) {
+    list.innerHTML = '<div class="card" style="text-align:center;padding:2rem;color:var(--text3)">Aucune personne enregistrée</div>';
+    return;
+  }
+  list.innerHTML = state.personnel.map(per => {
+    const postePole = state.poles.find(p => p.id === per.posteContractuel?.pole);
+    const reliquat = calcReliquatPersonne(per.ventilations);
+    const lignesVent = (per.ventilations||[]).map(v => {
+      const vPole = state.poles.find(p => p.id === v.pole);
+      const color = vPole ? POLE_COLORS[vPole.couleur] : 'var(--text3)';
+      const periodeStr = v.dateDebut || v.dateFin
+        ? `<span style="font-size:10px;color:var(--text3)">${v.dateDebut?v.dateDebut.split('-').reverse().join('/'):'?'} → ${v.dateFin?v.dateFin.split('-').reverse().join('/'):'?'}</span>`
+        : '';
+      // Calcul réel depuis les opérations étiquetées sur cette personne pour ce pôle
+      const opsPersonne = state.operations.filter(o => o.personneId === per.id && o.pole === v.pole && o.montant <= 0);
+      const brutVerse = opsPersonne.reduce((s,o) => s + montantNet(o), 0);
+      const montantVentile = brutVerse; // déjà ventilé par construction (l'opération est sur le bon pôle)
+      const montantFeder = v.dontFeder ? brutVerse * (v.tauxFeder||0)/100 : 0;
+      const montantMajoFeder = montantFeder * (1 + (v.tauxMajoration||0)/100);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;background:var(--bg2);margin-bottom:6px;flex-wrap:wrap">
+        <span style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>
+        <span style="font-weight:600;min-width:140px">${vPole?.nom||v.pole}</span>
+        <span class="badge b-gray">${v.pct}%</span>
+        ${v.dontFeder ? `<span class="badge b-purple">FEDER ${v.tauxFeder}% +${v.tauxMajoration}%</span>` : ''}
+        ${v.note ? `<span style="font-size:11px;color:var(--text3)">${v.note}</span>` : ''}
+        ${periodeStr}
+        ${brutVerse > 0 ? `<span style="margin-left:auto;font-size:12px;color:var(--text2)">Versé : <strong>${fmtInt(brutVerse)}</strong>${v.dontFeder?` · FEDER remboursé : <strong style="color:var(--teal)">${fmtInt(montantMajoFeder)}</strong>`:''}</span>` : ''}
+      </div>`;
+    }).join('');
+
+    return `<div class="card" style="margin-bottom:1rem">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
+        <div>
+          <div style="font-size:15px;font-weight:600">${per.nom}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">Poste contractuel : <strong>${postePole?.nom||'—'}</strong> à <strong>${per.posteContractuel?.pct||0}%</strong></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="ouvrirModalPersonne('${per.id}')"><i class="ti ti-edit"></i> Modifier</button>
+      </div>
+      <div style="margin-top:.5rem">${lignesVent || '<p style="font-size:12px;color:var(--text3)">Aucune ventilation explicite — 100% sur le poste contractuel</p>'}</div>
+      ${reliquat > 0 ? `<div class="ib ib-blue" style="margin-top:.5rem;margin-bottom:0"><i class="ti ti-info-circle"></i><span><strong>${reliquat}%</strong> non ventilé explicitement → attribué par défaut au pôle <strong>Fonctionnement général</strong></span></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function ouvrirModalPersonne(id) {
+  editPersonneId = id || null;
+  const per = id ? state.personnel.find(x=>x.id===id) : null;
+  document.getElementById('modal-personne-title').textContent = per ? 'Modifier la personne' : 'Nouvelle personne';
+  document.getElementById('mpe-nom').value = per?.nom || '';
+  const poleSel = document.getElementById('mpe-poste-pole');
+  poleSel.innerHTML = state.poles.map(p => `<option value="${p.id}" ${p.id===per?.posteContractuel?.pole?'selected':''}>${p.nom}</option>`).join('');
+  document.getElementById('mpe-poste-pct').value = per?.posteContractuel?.pct || 100;
+  renderVentilationsPersonneModal(per?.ventilations || []);
+  document.getElementById('mpe-btn-suppr').style.display = per ? 'inline-flex' : 'none';
+  document.getElementById('modal-personne').classList.add('open');
+}
+function fermerModalPersonne() { document.getElementById('modal-personne').classList.remove('open'); editPersonneId = null; }
+
+function renderVentilationsPersonneModal(vents) {
+  document.getElementById('ventilations-personne-list').innerHTML = vents.map((v,i) => ventilationRowHtml(v, i)).join('');
+  updateReliquatModal();
+}
+
+function ventilationRowHtml(v, i) {
+  const poleOpts = state.poles.map(p => `<option value="${p.id}" ${p.id===v?.pole?'selected':''}>${p.nom}</option>`).join('');
+  return `<div class="vent-pers-row" id="ventpers-${i}" style="background:var(--bg2);border-radius:var(--r);padding:8px;margin-bottom:6px">
+    <div style="display:grid;grid-template-columns:1fr 70px 28px;gap:6px;align-items:end;margin-bottom:6px">
+      <div class="fgroup"><label style="font-size:10px">Pôle</label><select id="vp-pole-${i}" onchange="updateReliquatModal()">${poleOpts}</select></div>
+      <div class="fgroup"><label style="font-size:10px">%</label><input type="number" id="vp-pct-${i}" value="${v?.pct||0}" min="0" max="100" oninput="updateReliquatModal()"></div>
+      <button class="btn btn-danger btn-xs" style="align-self:flex-end" onclick="document.getElementById('ventpers-${i}').remove();updateReliquatModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;align-items:center;margin-bottom:6px">
+      <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="vp-feder-${i}" ${v?.dontFeder?'checked':''} onchange="toggleFederRow(${i})" style="width:auto"> Dont FEDER</label>
+      <input type="number" id="vp-tauxfeder-${i}" value="${v?.tauxFeder||0}" placeholder="Taux élig. %" style="padding:4px 7px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)" ${v?.dontFeder?'':'disabled'}>
+      <input type="number" id="vp-tauxmaj-${i}" value="${v?.tauxMajoration||15}" placeholder="Majoration %" style="padding:4px 7px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)" ${v?.dontFeder?'':'disabled'}>
+    </div>
+    <div class="fg fg-3">
+      <div class="fgroup"><label style="font-size:10px">Note</label><input type="text" id="vp-note-${i}" value="${v?.note||''}" placeholder="Ex : accompagnement"></div>
+      <div class="fgroup"><label style="font-size:10px">Début</label><input type="date" id="vp-deb-${i}" value="${v?.dateDebut||''}"></div>
+      <div class="fgroup"><label style="font-size:10px">Fin</label><input type="date" id="vp-fin-${i}" value="${v?.dateFin||''}"></div>
+    </div>
+  </div>`;
+}
+
+function toggleFederRow(i) {
+  const checked = document.getElementById(`vp-feder-${i}`).checked;
+  document.getElementById(`vp-tauxfeder-${i}`).disabled = !checked;
+  document.getElementById(`vp-tauxmaj-${i}`).disabled = !checked;
+}
+
+function ajouterVentilationPersonne() {
+  const container = document.getElementById('ventilations-personne-list');
+  const i = container.querySelectorAll('.vent-pers-row').length;
+  const div = document.createElement('div');
+  div.innerHTML = ventilationRowHtml(null, i);
+  container.appendChild(div.firstElementChild);
+  updateReliquatModal();
+}
+
+function updateReliquatModal() {
+  const rows = document.querySelectorAll('#ventilations-personne-list .vent-pers-row');
+  let total = 0;
+  rows.forEach((row, i) => {
+    const idx = row.id.split('-')[1];
+    const pctInput = document.getElementById(`vp-pct-${idx}`);
+    if (pctInput) total += parseFloat(pctInput.value)||0;
+  });
+  const reliquat = Math.max(0, 100 - total);
+  const el = document.getElementById('mpe-reliquat');
+  if (total > 100) {
+    el.style.background = 'var(--red-l)'; el.style.color = 'var(--red)';
+    el.innerHTML = `<i class="ti ti-alert-triangle"></i> Total ventilé : ${total}% — dépasse 100%, à corriger`;
+  } else {
+    el.style.background = 'var(--blue-l)'; el.style.color = 'var(--blue)';
+    el.innerHTML = `<i class="ti ti-info-circle"></i> Total ventilé : ${total}% · Reliquat → Fonctionnement général : <strong>${reliquat}%</strong>`;
+  }
+}
+
+function validerPersonne() {
+  const nom = document.getElementById('mpe-nom').value.trim();
+  if (!nom) { toast('Nom requis', 'warn'); return; }
+  const posteContractuel = {
+    pole: document.getElementById('mpe-poste-pole').value,
+    pct: parseFloat(document.getElementById('mpe-poste-pct').value)||100
+  };
+  const rows = document.querySelectorAll('#ventilations-personne-list .vent-pers-row');
+  const ventilations = [];
+  rows.forEach((row) => {
+    const idx = row.id.split('-')[1];
+    const pole = document.getElementById(`vp-pole-${idx}`)?.value;
+    const pct = parseFloat(document.getElementById(`vp-pct-${idx}`)?.value)||0;
+    if (!pole || pct <= 0) return;
+    const dontFeder = document.getElementById(`vp-feder-${idx}`)?.checked || false;
+    ventilations.push({
+      id: 'v'+idx,
+      pole,
+      sousProjet: null,
+      pct,
+      dontFeder,
+      tauxFeder: dontFeder ? (parseFloat(document.getElementById(`vp-tauxfeder-${idx}`)?.value)||0) : 0,
+      tauxMajoration: dontFeder ? (parseFloat(document.getElementById(`vp-tauxmaj-${idx}`)?.value)||0) : 0,
+      dateDebut: document.getElementById(`vp-deb-${idx}`)?.value||'',
+      dateFin: document.getElementById(`vp-fin-${idx}`)?.value||'',
+      note: document.getElementById(`vp-note-${idx}`)?.value.trim()||'',
+    });
+  });
+
+  if (editPersonneId) {
+    const per = state.personnel.find(x=>x.id===editPersonneId);
+    if (per) { per.nom = nom; per.posteContractuel = posteContractuel; per.ventilations = ventilations; }
+  } else {
+    const id = nom.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_.]/g,'');
+    state.personnel.push({ id, nom, posteContractuel, ventilations });
+  }
+  fermerModalPersonne();
+  sauvegarder(true);
+  renderPagePersonnel();
+  toast('Personne enregistrée');
+}
+
+function supprimerPersonne() {
+  if (!confirm('Supprimer cette personne ? Les opérations déjà étiquetées avec cette personne garderont leur référence mais celle-ci ne sera plus reconnue.')) return;
+  state.personnel = state.personnel.filter(p => p.id !== editPersonneId);
+  fermerModalPersonne();
+  sauvegarder(true);
+  renderPagePersonnel();
+  toast('Personne supprimée');
 }
 
 function renderPolePage(poleId) {
@@ -2028,12 +2281,11 @@ function renderEtiquetage() {
       : '<option value="">—</option>';
     const isCredit = o.montant > 0;
     const montantStyle = isCredit ? 'color:var(--teal);font-weight:600' : 'font-weight:500';
-    // Sous-projet sélectionné a une liste "personnel" (ex: PERS_FEDER) → afficher un select personne
-    const spSelected = pole?.sousProjets?.find(sp => sp.id === o.sousPrj);
-    const personnelOpts = spSelected?.personnel?.length
+    // Afficher le select personne si la catégorie est "personnel" (liste globale state.personnel)
+    const personnelOpts = (!isCredit && o.cat === 'personnel' && state.personnel?.length)
       ? `<select onchange="setEtiqPersonne('${o.id}',this.value)" style="margin-left:4px">
           <option value="">— PersonnE</option>
-          ${spSelected.personnel.map(per => `<option value="${per.id}" ${o.personneId===per.id?'selected':''}>${per.nom} (${per.tauxEligibilite}%)</option>`).join('')}
+          ${state.personnel.map(per => `<option value="${per.id}" ${o.personneId===per.id?'selected':''}>${per.nom}</option>`).join('')}
         </select>`
       : '';
     return `<div class="etiq-row" id="erow-${o.id}">
@@ -2080,28 +2332,25 @@ function setEtiqPole(id, val) {
 
 function setEtiqSP(id, val) {
   const op = state.operations.find(o => o.id === id);
-  if (op) {
-    op.sousPrj = val || null;
-    op.personneId = null;
-    memoriserRegle(op);
-    // Mettre à jour le select personne si le sous-projet a une liste de personnel
-    const pole = state.poles.find(p => p.id === op.pole);
-    const sp = pole?.sousProjets?.find(s => s.id === val);
-    const perDiv = document.getElementById('per-' + id);
-    if (perDiv) {
-      perDiv.innerHTML = sp?.personnel?.length
-        ? `<select onchange="setEtiqPersonne('${id}',this.value)" style="margin-left:4px">
-            <option value="">— PersonnE</option>
-            ${sp.personnel.map(per => `<option value="${per.id}">${per.nom} (${per.tauxEligibilite}%)</option>`).join('')}
-          </select>`
-        : '';
-    }
-  }
+  if (op) { op.sousPrj = val || null; memoriserRegle(op); }
 }
 
 function setEtiqCat(id, val) {
   const op = state.operations.find(o => o.id === id);
-  if (op) { op.cat = val || null; memoriserRegle(op); }
+  if (!op) return;
+  op.cat = val || null;
+  memoriserRegle(op);
+  // Afficher/masquer le select personne selon la catégorie
+  const perDiv = document.getElementById('per-' + id);
+  if (perDiv) {
+    const isCredit = op.montant > 0;
+    perDiv.innerHTML = (!isCredit && op.cat === 'personnel' && state.personnel?.length)
+      ? `<select onchange="setEtiqPersonne('${id}',this.value)" style="margin-left:4px">
+          <option value="">— PersonnE</option>
+          ${state.personnel.map(per => `<option value="${per.id}">${per.nom}</option>`).join('')}
+        </select>`
+      : '';
+  }
 }
 
 function memoriserRegle(op) {
@@ -2926,6 +3175,7 @@ function importJSON(input) {
         if (s.regles) state.regles = s.regles;
         if (s.factures) state.factures = s.factures;
         if (s.bilansFormation) state.bilansFormation = s.bilansFormation;
+        if (s.personnel) state.personnel = s.personnel;
         if (s.config) state.config = { ...state.config, ...s.config };
         syncCfgInputs();
         sauvegarder(true);
@@ -3031,6 +3281,7 @@ function chargerLS() {
     if (saved.factures) state.factures = saved.factures;
     if (saved.tresorerie) state.tresorerie = saved.tresorerie;
     if (saved.bilansFormation) state.bilansFormation = saved.bilansFormation;
+    if (saved.personnel) state.personnel = saved.personnel;
     if (saved.config) state.config = { ...state.config, ...saved.config };
     syncCfgInputs();
   } catch (e) { console.error('Erreur chargement localStorage:', e); }
