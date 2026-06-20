@@ -2407,6 +2407,15 @@ function renderSousProjetsModal(sps) {
         <input type="number" id="spfprev-${i}-${j}" value="${f.prevu||0}" step="100" placeholder="Prévu €" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
         <button class="btn btn-danger btn-xs" style="padding:2px 5px" onclick="this.parentElement.remove()"><i class="ti ti-x"></i></button>
       </div>`).join('');
+    const pers = (sp.personnel||[]).filter(per => per.id && per.nom).map((per,k) => `
+      <div style="display:grid;grid-template-columns:1fr 70px 70px 1fr 1fr 28px;gap:4px;margin-bottom:4px;align-items:end">
+        <input type="text" id="sppnom-${i}-${k}" value="${per.nom||''}" placeholder="Nom" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+        <input type="number" id="ppelig-${i}-${k}" value="${per.tauxEligibilite||0}" step="1" placeholder="Élig.%" title="Taux d'éligibilité FEDER" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+        <input type="number" id="ppmaj-${i}-${k}" value="${per.tauxMajoration||0}" step="1" placeholder="Maj.%" title="Taux de majoration fonctionnement" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+        <input type="date" id="ppdeb-${i}-${k}" value="${per.dateDebut||''}" title="Date début" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+        <input type="date" id="ppfin-${i}-${k}" value="${per.dateFin||''}" title="Date fin" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+        <button class="btn btn-danger btn-xs" style="padding:2px 5px" onclick="this.parentElement.remove()"><i class="ti ti-x"></i></button>
+      </div>`).join('');
     return `
     <div class="sp-block" id="spblock-${i}" style="background:var(--bg2);border-radius:var(--r);padding:8px;margin-bottom:8px">
       <div style="display:grid;grid-template-columns:1fr 1fr 100px 28px;gap:6px;align-items:end;margin-bottom:6px">
@@ -2426,8 +2435,33 @@ function renderSousProjetsModal(sps) {
         </div>
         <div id="spfins-${i}">${fins}</div>
       </div>
+      <div style="margin-top:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Personnel (taux FEDER individuels)</span>
+          <button class="btn btn-secondary btn-xs" onclick="ajouterPersonneSP(${i})" style="padding:1px 6px;font-size:10px"><i class="ti ti-plus"></i> Ajouter</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 70px 70px 1fr 1fr 28px;gap:4px;margin-bottom:4px;font-size:9px;color:var(--text3);text-transform:uppercase">
+          <span>Nom</span><span>Élig. %</span><span>Maj. %</span><span>Début</span><span>Fin</span><span></span>
+        </div>
+        <div id="sppers-${i}">${pers}</div>
+      </div>
     </div>`;
   }).join('');
+}
+
+function ajouterPersonneSP(spIdx) {
+  const container = document.getElementById(`sppers-${spIdx}`);
+  const k = container.children.length;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 70px 70px 1fr 1fr 28px;gap:4px;margin-bottom:4px;align-items:end';
+  div.innerHTML = `
+    <input type="text" id="sppnom-${spIdx}-${k}" placeholder="Nom" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+    <input type="number" id="ppelig-${spIdx}-${k}" value="100" step="1" placeholder="Élig.%" title="Taux d'éligibilité FEDER" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+    <input type="number" id="ppmaj-${spIdx}-${k}" value="15" step="1" placeholder="Maj.%" title="Taux de majoration fonctionnement" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+    <input type="date" id="ppdeb-${spIdx}-${k}" title="Date début" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+    <input type="date" id="ppfin-${spIdx}-${k}" title="Date fin" style="padding:3px 6px;font-size:11px;border:.5px solid var(--border2);border-radius:5px;background:var(--bg);color:var(--text)">
+    <button class="btn btn-danger btn-xs" style="padding:2px 5px" onclick="this.parentElement.remove()"><i class="ti ti-x"></i></button>`;
+  container.appendChild(div);
 }
 
 function ajouterFinanceurSP(spIdx) {
@@ -2465,6 +2499,13 @@ function ajouterSousProjet() {
         <button class="btn btn-secondary btn-xs" onclick="ajouterFinanceurSP(${n})" style="padding:1px 6px;font-size:10px"><i class="ti ti-plus"></i> Ajouter</button>
       </div>
       <div id="spfins-${n}"></div>
+    </div>
+    <div style="margin-top:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Personnel (taux FEDER individuels)</span>
+        <button class="btn btn-secondary btn-xs" onclick="ajouterPersonneSP(${n})" style="padding:1px 6px;font-size:10px"><i class="ti ti-plus"></i> Ajouter</button>
+      </div>
+      <div id="sppers-${n}"></div>
     </div>`;
   document.getElementById('sous-projets-list').appendChild(div);
 }
@@ -2478,13 +2519,15 @@ function sauvegarderPole() {
   const nom = document.getElementById('mp-nom').value.trim();
   const code = document.getElementById('mp-code').value.trim().toUpperCase();
   if (!nom || !code) { toast('Nom et code requis', 'warn'); return; }
+  // Pôle existant pour préserver les IDs de sous-projets déjà créés (ex: PERS_FEDER, CCC)
+  const poleExistant = editPoleId ? state.poles.find(x=>x.id===editPoleId) : null;
   // Lire sous-projets enrichis
   const spList = document.getElementById('sous-projets-list');
   const sps = [];
   const spBlocks = spList.querySelectorAll('[id^="spblock-"]');
   spBlocks.forEach((block, i) => {
-    const nom = document.getElementById(`spnom-${i}`)?.value.trim();
-    if (!nom) return;
+    const spNom = document.getElementById(`spnom-${i}`)?.value.trim();
+    if (!spNom) return;
     const budget = parseFloat(document.getElementById(`spbud-${i}`)?.value)||0;
     const dateDebut = document.getElementById(`spdeb-${i}`)?.value||'';
     const dateFin = document.getElementById(`spfin-${i}`)?.value||'';
@@ -2498,7 +2541,24 @@ function sauvegarderPole() {
         if (fnom) fins.push({ id: fnom.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,''), nom: fnom, prevu: fprev });
       });
     }
-    sps.push({ id: code+'_'+nom.toUpperCase().replace(/\s+/g,'_'), nom, budget, dateDebut, dateFin, financeurs: fins });
+    // Personnel du sous-projet (taux FEDER individuels)
+    const persContainer = document.getElementById(`sppers-${i}`);
+    const pers = [];
+    if (persContainer) {
+      persContainer.children && Array.from(persContainer.children).forEach((row, k) => {
+        const pnom = document.getElementById(`sppnom-${i}-${k}`)?.value.trim();
+        if (!pnom) return;
+        const tauxEligibilite = parseFloat(document.getElementById(`ppelig-${i}-${k}`)?.value)||0;
+        const tauxMajoration = parseFloat(document.getElementById(`ppmaj-${i}-${k}`)?.value)||0;
+        const pDateDebut = document.getElementById(`ppdeb-${i}-${k}`)?.value||'';
+        const pDateFin = document.getElementById(`ppfin-${i}-${k}`)?.value||'';
+        pers.push({ id: pnom.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_.]/g,''), nom: pnom, tauxEligibilite, tauxMajoration, dateDebut: pDateDebut, dateFin: pDateFin });
+      });
+    }
+    // Préserver l'ID existant du sous-projet si on retrouve le même nom (évite de casser les opérations déjà étiquetées)
+    const spExistant = poleExistant?.sousProjets?.find(x => x.nom === spNom);
+    const spId = spExistant ? spExistant.id : code+'_'+spNom.toUpperCase().replace(/\s+/g,'_');
+    sps.push({ id: spId, nom: spNom, budget, dateDebut, dateFin, financeurs: fins, personnel: pers });
   });
 
   // Fallback si pas de blocs trouvés (ancien format)
@@ -2507,7 +2567,7 @@ function sauvegarderPole() {
       const n = document.getElementById('spnom-'+i)?.value.trim();
       if (n) sps.push({ id: code+'_'+n.toUpperCase().replace(/\s+/g,'_'), nom: n,
         budget: parseFloat(document.getElementById('spbud-'+i)?.value)||0,
-        dateDebut:'', dateFin:'', financeurs:[] });
+        dateDebut:'', dateFin:'', financeurs:[], personnel:[] });
     }
   }
   // Lire financeurs
