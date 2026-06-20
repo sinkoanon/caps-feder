@@ -336,7 +336,7 @@ tbody tr:hover td{background:var(--bg2)}
   </div>
 
   <!-- KPIs trésorerie -->
-  <div class="card-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.25rem">
+  <div class="card-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:1.25rem">
     <div class="metric">
       <div class="metric-label">Solde bancaire saisi</div>
       <div class="metric-value ok" id="treso-k-solde">—</div>
@@ -345,7 +345,12 @@ tbody tr:hover td{background:var(--bg2)}
     <div class="metric">
       <div class="metric-label">Engagements en attente</div>
       <div class="metric-value danger" id="treso-k-engage">0 €</div>
-      <div class="metric-sub" id="treso-k-engage-sub">factures non payées</div>
+      <div class="metric-sub" id="treso-k-engage-sub">factures fournisseurEs</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Factures clientEs à encaisser</div>
+      <div class="metric-value" id="treso-k-aencaisser" style="color:var(--blue)">0 €</div>
+      <div class="metric-sub" id="treso-k-aencaisser-sub">émises, non encaissées</div>
     </div>
     <div class="metric">
       <div class="metric-label">Subventions à recevoir</div>
@@ -770,7 +775,9 @@ tbody tr:hover td{background:var(--bg2)}
     </div>
     <button class="btn btn-secondary btn-sm" onclick="resetFiltresFactures()" style="align-self:flex-end;height:32px"><i class="ti ti-filter-off"></i></button>
     <button class="btn btn-secondary btn-sm" onclick="exportFacturesCSV()" style="align-self:flex-end;height:32px"><i class="ti ti-table-export"></i> Export CSV</button>
+    <button class="btn btn-secondary btn-sm" onclick="exportPiecesJointesZip()" style="align-self:flex-end;height:32px"><i class="ti ti-file-zip"></i> Export pièces jointes (ZIP)</button>
   </div>
+  <div id="export-pj-status" style="margin-bottom:.75rem"></div>
 
   <!-- Table -->
   <div class="card" style="padding:0">
@@ -1017,6 +1024,7 @@ tbody tr:hover td{background:var(--bg2)}
 <div id="toast"><i id="toast-icon" class="ti ti-check"></i><span id="toast-msg">OK</span></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
 // STATE
@@ -1113,6 +1121,15 @@ document.addEventListener('DOMContentLoaded', () => {
   chargerLS();
   if (!state.factures) state.factures = [];
   syncCfgInputs();
+  // Peupler les champs trésorerie dès le départ (même si la page n'est pas active)
+  if (state.tresorerie?.solde !== null && state.tresorerie?.solde !== undefined) {
+    const elSolde = document.getElementById('treso-solde');
+    if (elSolde) elSolde.value = state.tresorerie.solde;
+  }
+  if (state.tresorerie?.dateSolde) {
+    const elDate = document.getElementById('treso-date-solde');
+    if (elDate) elDate.value = state.tresorerie.dateSolde;
+  }
   renderNav();
   updateAll();
 });
@@ -2889,7 +2906,7 @@ function renderExport() {
   const totalBudget = calcBudgetTotal();
   const totalDep = etiq.reduce((s,o)=>s+montantNet(o),0);
   const totalTaux = totalBudget>0 ? Math.round(totalDep/totalBudget*100) : 0;
-  const facEnAttente = (state.factures||[]).filter(f=>!['payee','cloturee'].includes(f.statut));
+  const facEnAttente = (state.factures||[]).filter(f=>f.type!=='client' && !['payee','cloturee'].includes(f.statut));
 
   // ── Bilan par pôle ──
   const bilanTbody = document.getElementById('bilan-poles-tbody');
@@ -2944,11 +2961,11 @@ function exportBilanStructure() {
     const pDep=etiq.filter(o=>o.pole===p.id).reduce((s,o)=>s+montantNet(o),0);
     const pBudget=(p.budget||0)+(p.sousProjets||[]).reduce((a,sp)=>a+(sp.budget||0),0);
     const pTaux=pBudget>0?Math.round(pDep/pBudget*100):0;
-    const pFac=(state.factures||[]).filter(f=>f.pole===p.id&&!['payee','cloturee'].includes(f.statut)).length;
+    const pFac=(state.factures||[]).filter(f=>f.pole===p.id&&f.type!=='client'&&!['payee','cloturee'].includes(f.statut)).length;
     return [p.nom,p.codeAnalytique||p.code,p.taux||0,pBudget.toFixed(2).replace('.',','),pDep.toFixed(2).replace('.',','),pTaux,pFac].join(sep);
   }).join('\n');
   const tb=calcBudgetTotal(), td=etiq.reduce((s,o)=>s+montantNet(o),0);
-  const footer=['TOTAL','',100,tb.toFixed(2).replace('.',','),td.toFixed(2).replace('.',','),tb>0?Math.round(td/tb*100):0,(state.factures||[]).filter(f=>!['payee','cloturee'].includes(f.statut)).length].join(sep);
+  const footer=['TOTAL','',100,tb.toFixed(2).replace('.',','),td.toFixed(2).replace('.',','),tb>0?Math.round(td/tb*100):0,(state.factures||[]).filter(f=>f.type!=='client'&&!['payee','cloturee'].includes(f.statut)).length].join(sep);
   dl(BOM+h+'\n'+rows+'\n'+footer,'Collin_bilan_structure_'+today()+'.csv','text/csv;charset=utf-8');
   toast('Bilan structure exporté');
 }
@@ -3323,11 +3340,11 @@ function updateTresorerie() {
     ? 'au ' + dateSolde.split('-').reverse().join('/')
     : 'non renseigné';
 
-  // ── Engagements : factures non payées ──
-  const facEnAttente = (state.factures||[]).filter(f => !['payee','cloturee'].includes(f.statut));
+  // ── Engagements : factures FOURNISSEURS non payées (exclut les factures clients) ──
+  const facEnAttente = (state.factures||[]).filter(f => f.type !== 'client' && !['payee','cloturee'].includes(f.statut));
   const totalEngage  = facEnAttente.reduce((s,f) => s + (f.montant||0), 0);
   document.getElementById('treso-k-engage').textContent   = fmt(totalEngage);
-  document.getElementById('treso-k-engage-sub').textContent = facEnAttente.length + ' facture(s)';
+  document.getElementById('treso-k-engage-sub').textContent = facEnAttente.length + ' facture(s) fournisseurE(s)';
 
   // Table factures en attente
   const facTbody = document.getElementById('treso-factures-tbody');
@@ -3349,6 +3366,12 @@ function updateTresorerie() {
       }).join('');
   }
   document.getElementById('treso-total-engage').textContent = fmt(totalEngage);
+
+  // ── Factures CLIENTS en attente d'encaissement (recettes à venir, distinct des engagements) ──
+  const facClientsEnAttente = (state.factures||[]).filter(f => f.type === 'client' && !['encaissee','cloturee'].includes(f.statut));
+  const totalAEncaisser = facClientsEnAttente.reduce((s,f) => s + (f.montant||0), 0);
+  document.getElementById('treso-k-aencaisser').textContent = fmt(totalAEncaisser);
+  document.getElementById('treso-k-aencaisser-sub').textContent = facClientsEnAttente.length + ' facture(s) émises, non encaissées';
 
   // ── Subventions à recevoir ──
   const etiq = state.operations.filter(o => o.pole && o.montant > 0);
@@ -3568,7 +3591,7 @@ function resetFiltresFactures() {
 }
 
 // ── TABLE FACTURES ──
-function renderFactures() {
+function getFacturesFiltrees() {
   const fs = document.getElementById('fac-f-statut').value;
   const fp = document.getElementById('fac-f-pole').value;
   const fr = document.getElementById('fac-f-resp').value;
@@ -3576,7 +3599,11 @@ function renderFactures() {
   if (fs) facs = facs.filter(f=>f.statut===fs);
   if (fp) facs = facs.filter(f=>f.pole===fp);
   if (fr) facs = facs.filter(f=>f.resp===fr);
-  facs = [...facs].sort((a,b)=>(b.dateRecep||'').localeCompare(a.dateRecep||''));
+  return [...facs].sort((a,b)=>(b.dateRecep||'').localeCompare(a.dateRecep||''));
+}
+
+function renderFactures() {
+  const facs = getFacturesFiltrees();
 
   const now = new Date();
   let total=0;
@@ -3790,6 +3817,65 @@ function exportFacturesCSV() {
   }).join('\n');
   dl(BOM+h+'\n'+rows,'Collin_factures_'+today()+'.csv','text/csv;charset=utf-8');
   toast('Export factures téléchargé');
+}
+
+// ── EXPORT ZIP DES PIÈCES JOINTES (respecte les filtres actifs de la page Suivi factures) ──
+function exportPiecesJointesZip() {
+  const facs = getFacturesFiltrees().filter(f => f.pj && f.pj.data);
+  const statusDiv = document.getElementById('export-pj-status');
+
+  if (!facs.length) {
+    statusDiv.innerHTML = `<div class="ib ib-amber"><i class="ti ti-alert-triangle"></i><span>Aucune pièce jointe trouvée pour les filtres actuels.</span></div>`;
+    return;
+  }
+
+  statusDiv.innerHTML = `<div class="ib ib-blue"><i class="ti ti-loader-2"></i><span>Préparation du ZIP — ${facs.length} pièce(s) jointe(s)…</span></div>`;
+
+  const zip = new JSZip();
+  const nomsUtilises = new Set();
+
+  facs.forEach(f => {
+    // Reconstituer le nom de fichier selon la convention AAAA-MM_fournisseur_réf
+    const date = f.dateRecep || f.dateEcheance || '';
+    const aaaaMM = date ? date.substring(0,7) : 'sans-date';
+    const fourn = (f.fourn||'inconnu').replace(/[^\w\séèêàâîôûç-]/gi,'').trim().replace(/\s+/g,'');
+    const ref = (f.ref||'sans-ref').replace(/[^\w-]/gi,'');
+    // Déterminer l'extension depuis le type MIME ou le nom d'origine
+    let ext = 'pdf';
+    if (f.pj.type === 'image/png') ext = 'png';
+    else if (f.pj.type === 'image/jpeg' || f.pj.type === 'image/jpg') ext = 'jpg';
+    else if (f.pj.nom) {
+      const m = f.pj.nom.match(/\.(\w+)$/);
+      if (m) ext = m[1];
+    }
+    let nomFichier = `${aaaaMM}_${fourn}_${ref}.${ext}`;
+    // Éviter les doublons de nom dans le ZIP
+    let i = 2;
+    while (nomsUtilises.has(nomFichier)) {
+      nomFichier = `${aaaaMM}_${fourn}_${ref}-${i}.${ext}`;
+      i++;
+    }
+    nomsUtilises.add(nomFichier);
+
+    // f.pj.data est en base64 data URL (ex: "data:application/pdf;base64,JVBERi0...")
+    const base64Data = f.pj.data.split(',')[1] || f.pj.data;
+    zip.file(nomFichier, base64Data, { base64: true });
+  });
+
+  zip.generateAsync({ type: 'blob' }).then(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Collin_pieces_jointes_' + today() + '.zip';
+    a.click();
+    URL.revokeObjectURL(url);
+    statusDiv.innerHTML = `<div class="ib ib-green"><i class="ti ti-check"></i><span>${facs.length} pièce(s) jointe(s) exportée(s) avec succès.</span></div>`;
+    toast(facs.length + ' pièces jointes exportées');
+  }).catch(err => {
+    console.error(err);
+    statusDiv.innerHTML = `<div class="ib ib-red"><i class="ti ti-alert-triangle"></i><span>Erreur lors de la génération du ZIP : ${err.message}</span></div>`;
+    toast('Erreur export ZIP', 'warn');
+  });
 }
 
 // ── HELPER DATE ──
